@@ -187,25 +187,26 @@ const App: React.FC = () => {
       </div>
 
       {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
-<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
-  <div className="flex items-center gap-4">
-    {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
+{/* 2. الهيدر (Navbar) */}
+<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4">
+  <div className="flex items-center gap-5">
     <div className="relative">
+      {/* التعديل هنا: حذف الإطار الأسود والخلفية */}
       <img 
-  src="/img/lo.jpg" 
-  alt="Logo" 
-  className="w-20 h-20 rounded-2xl border-4 border-black shadow-2xl object-cover transform hover:rotate-3 transition-transform" 
-/>
-
-      {/* حركة إضافية: نقطة خضراء تظهر أن اللعبة نشطة */}
+        src="/img/lo.jpg" 
+        alt="Logo" 
+        className="w-24 h-24 object-contain" 
+      />
       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
     </div>
-    
     <div className="flex flex-col">
-      <span className="text-3xl font-black tracking-tighter uppercase leading-none">چگار</span>
-      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-1 py-0.5 rounded mt-1 self-start">لعبة العقول</span>
+      <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
+      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">تحدي المعلومات</span>
     </div>
   </div>
+  
+  {/* ... باقي كود المستخدم والـ logout ... */}
+
   
   {currentUser && (
     <div className="flex items-center gap-4">
