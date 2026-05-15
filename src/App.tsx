@@ -200,8 +200,8 @@ const App: React.FC = () => {
   <div className="flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in duration-1000">
     
     {/* الدائرة الصفراء الكبيرة التي كانت تحتوي على الدرع */}
-    <div className="relative mb-8">
-      <div className="w-40 h-40 bg-[#F7C705] rounded-full flex items-center justify-center shadow-[0_10px_40px_rgba(0,0,0,0.3)] border-4 border-black/5">
+    <div>
+      <div>
         {/* وضع صورة الصقر مكان أيقونة الصح */}
         <img 
           src="/img/sq.jpeg" 
@@ -212,11 +212,6 @@ const App: React.FC = () => {
       
       {/* لمسة إضافية: النقطة الخضراء الصغيرة التي تظهر في تصميمك */}
       <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 border-4 border-[#F7C705] rounded-full"></div>
-    </div>
-
-    {/* إظهار نافذة تسجيل الدخول مباشرة تحت الدائرة */}
-    <div className="w-full max-w-md transform transition-all">
-       <Login onLogin={handleLogin} />
     </div>
   </div>
 )}
