@@ -197,14 +197,26 @@ const App: React.FC = () => {
         alt="Logo" 
         className="w-24 h-24 object-contain" 
       />
-      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
+      <div className="absolute -top-1 -right-10 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
     </div>
     <div className="flex flex-col">
       <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
       <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">تحدي المعلومات</span>
     </div>
   </div>
-  
+  {/* 3. شاشة الدخول مع الصقر في الوسط */}
+{gameState.step === 'login' && (
+  <div className="flex flex-col items-center">
+    <div className="mb-[-25px] z-20 relative animate-bounce">
+        <img 
+          src="/img/sq.jpeg" 
+          alt="Main Icon" 
+          className="w-44 h-44 object-contain" // تم حذف drop-shadow إذا كنت تريد إزالة أي أثر للخلفية
+        />
+    </div>
+    <Login onLogin={handleLogin} />
+  </div>
+)}
   {/* ... باقي كود المستخدم والـ logout ... */}
 
   
