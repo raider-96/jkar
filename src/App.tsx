@@ -204,18 +204,16 @@ const App: React.FC = () => {
       <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">تحدي المعلومات</span>
     </div>
   </div>
-{/* 3. شاشة الدخول مع الصقر في الوسط - الصورة الآن ثابتة */}
+{/* عرض صورة الصقر فقط في حالة الـ login بدون نافذة تسجيل الدخول */}
 {gameState.step === 'login' && (
-  <div className="flex flex-col items-center">
-    {/* تم حذف animate-bounce لجعل الصورة مستقرة */}
-    <div className="mb-[-25px] z-20 relative"> 
+  <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-1000">
+    <div className="relative z-20">
         <img 
           src="/img/sq.jpeg" 
-          alt="Main Icon" 
-          className="w-44 h-44 object-contain" 
+          alt="Chgar Eagle" 
+          className="w-64 h-64 object-contain drop-shadow-2xl" 
         />
     </div>
-    <Login onLogin={handleLogin} />
   </div>
 )}
   {/* ... باقي كود المستخدم والـ logout ... */}
