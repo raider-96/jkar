@@ -179,21 +179,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10 overflow-x-hidden">
       
-      {/* 1. الشريط العلوي الحيوي (Hazard Stripes) */}
-      <div className="h-6 w-full bg-[#F7C705] border-b-4 border-black overflow-hidden relative z-50">
-        <div className="animate-hazard h-full">
-           {Array.from({ length: 80 }).map((_, i) => (
-            <div key={i} className="w-10 h-full bg-black skew-x-[-45deg] mx-2 shrink-0" />
-          ))}
-        </div>
-      </div>
 
       {/* 2. الهيدر (Navbar) */}
       <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4">
         <div className="flex items-center gap-5">
           <div className="relative">
             <img 
-              src="/img/log.png" 
+              src="/img/lo.jpg" 
               alt="Logo" 
               className="w-24 h-24 object-contain drop-shadow-xl" 
             />
@@ -224,7 +216,7 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center">
             <div className="mb-[-25px] z-20 relative animate-bounce">
                 <img 
-                  src="/img/log.png" 
+                  src="/img/sq.jpng" 
                   alt="Main Icon" 
                   className="w-44 h-44 object-contain drop-shadow-2xl"
                 />
