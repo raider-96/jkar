@@ -219,7 +219,7 @@ const App: React.FC = () => {
       <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
         <div className="flex items-center gap-4">
           <img 
-            src="https://raw.githubusercontent.com/stackblitz/stackblitz-images/main/chgar-logo.png" 
+            src="/img/lo.jpg"
             alt="Chgar" 
             className="w-16 h-16 rounded-[20px] shadow-2xl border-4 border-black"
             onError={(e) => {
