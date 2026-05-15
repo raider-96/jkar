@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameState, Team, Question, Difficulty, UserAccount } from './types';
 import { QUESTIONS } from './data/questions';
@@ -35,6 +34,8 @@ const App: React.FC = () => {
   } | null>(null);
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  
+  // لضمان استقرار البيانات، نقرأ من localStorage أو نستخدم الافتراضي
   const [users, setUsers] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem('chagar_users');
     return saved ? JSON.parse(saved) : DEFAULT_USERS;
@@ -42,6 +43,7 @@ const App: React.FC = () => {
 
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
+  // مزامنة أي تغيير في اليوزرات مع التخزين المحلي فوراً
   useEffect(() => {
     localStorage.setItem('chagar_users', JSON.stringify(users));
   }, [users]);
@@ -53,35 +55,60 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // دالة تسجيل الدخول المحدثة
   const handleLogin = (username: string) => {
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+    const cleanUsername = username.trim().toLowerCase();
+    // البحث في قائمة users المحدثة دائماً
+    const user = users.find(u => u.username.toLowerCase() === cleanUsername);
+    
     if (user) {
       if (!user.isActive) {
-        alert('هذا اليوزر معطل حالياً');
+        alert('هذا اليوزر معطل حالياً من قبل الإدارة');
         return;
       }
       setCurrentUser(user);
       setGameState(prev => ({ ...prev, step: 'setup' }));
     } else {
-      alert('اليوزر غير موجود');
+      alert('اسم المستخدم غير موجود، يرجى التأكد من الإدارة');
     }
   };
 
+  // إضافة يوزر جديد مع منع التكرار
   const handleAddUser = (username: string) => {
-    if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) return;
+    const cleanName = username.trim();
+    if (!cleanName) return;
+
+    if (users.find(u => u.username.toLowerCase() === cleanName.toLowerCase())) {
+      alert('هذا المستخدم موجود بالفعل');
+      return;
+    }
+
     const newUser: UserAccount = {
-      username,
+      username: cleanName,
       role: 'user',
       isActive: true,
       createdAt: new Date().toISOString()
     };
-    setUsers([...users, newUser]);
+    
+    setUsers(prev => [...prev, newUser]);
   };
 
+  // تعطيل/تفعيل يوزر
   const handleToggleUser = (username: string) => {
-    setUsers(users.map(u => 
+    setUsers(prev => prev.map(u => 
       u.username === username ? { ...u, isActive: !u.isActive } : u
     ));
+  };
+
+  // دالة حذف يوزر (الخيار الجديد للادمن)
+  const handleDeleteUser = (username: string) => {
+    if (username.toLowerCase() === 'admin') {
+      alert('لا يمكن حذف حساب المسؤول الرئيسي');
+      return;
+    }
+    if (window.confirm(`هل أنت متأكد من حذف المستخدم ${username} نهائياً؟`)) {
+      setUsers(prev => prev.filter(u => u.username !== username));
+    }
   };
 
   const handleStartGame = (t1: string, t2: string, cats: string[]) => {
@@ -139,7 +166,7 @@ const App: React.FC = () => {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#6366f1', '#a855f7', '#ec4899']
+        colors: ['#F7C705', '#000000', '#ffffff']
       });
     }
 
@@ -178,55 +205,68 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10">
+    <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10 overflow-x-hidden">
+      
       {/* Top Hazard Stripes */}
-      <div className="h-6 w-full bg-repeat-x flex overflow-hidden border-b-4 border-black">
-        {Array.from({ length: 50 }).map((_, i) => (
-          <div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />
+      <div className="h-6 w-full bg-black overflow-hidden border-b-4 border-black flex">
+        {Array.from({ length: 80 }).map((_, i) => (
+          <div key={i} className="w-10 h-full bg-[#F7C705] skew-x-[-45deg] mx-2 shrink-0" />
         ))}
       </div>
 
-      {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
-<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
-  <div className="flex items-center gap-4">
-    {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
-    <div className="relative">
-      <img 
-  src="/img/lo.jpg" 
-  alt="Logo" 
-  className="w-20 h-20 rounded-2xl border-4 border-black shadow-2xl object-cover transform hover:rotate-3 transition-transform" 
-/>
-      {/* حركة إضافية: نقطة خضراء تظهر أن اللعبة نشطة */}
-      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
-    </div>
-    
-    <div className="flex flex-col">
-      <span className="text-3xl font-black tracking-tighter uppercase leading-none">چگار</span>
-      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-1 py-0.5 rounded mt-1 self-start">لعبة العقول</span>
-    </div>
-  </div>
-  
-  {currentUser && (
-    <div className="flex items-center gap-4">
-      <div className="hidden md:flex flex-col items-end">
-        <span className="text-black/50 text-[10px] font-black uppercase">Active Session</span>
-        <span className="text-black font-black text-sm">{currentUser.username}</span>
-      </div>
-      <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:bg-black/80 transition-all shadow-lg active:scale-95">
-        <LogOut size={22} />
-      </button>
-    </div>
-  )}
-</nav>
+      <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4">
+        <div className="flex items-center gap-5">
+          <div className="relative">
+            <img 
+              src="/img/log.png" 
+              alt="Logo" 
+              className="w-24 h-24 object-contain drop-shadow-xl" 
+            />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
+            <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">لعبة العقول</span>
+          </div>
+        </div>
+        
+        {currentUser && (
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-black/50 text-[10px] font-black uppercase">Active Admin</span>
+              <span className="text-black font-black text-sm">{currentUser.username}</span>
+            </div>
+            <button onClick={handleLogout} className="bg-black text-[#F7C705] p-3 rounded-2xl hover:bg-black/80 transition-all shadow-lg active:scale-95">
+              <LogOut size={22} />
+            </button>
+          </div>
+        )}
+      </nav>
 
       <main className="relative z-10 pb-20">
-        {gameState.step === 'login' && <Login onLogin={handleLogin} />}
+        {/* شاشة الدخول المحدثة (الصقر في الدائرة) */}
+        {gameState.step === 'login' && (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="relative mb-8">
+              <div className="w-40 h-40 bg-[#F7C705] rounded-full flex items-center justify-center shadow-2xl border-4 border-black/10 overflow-hidden">
+                <img 
+                  src="/img/sq.jpeg" 
+                  alt="Chgar Icon" 
+                  className="w-32 h-32 object-contain" 
+                />
+              </div>
+              <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 border-4 border-[#F7C705] rounded-full animate-pulse"></div>
+            </div>
+            <Login onLogin={handleLogin} />
+          </div>
+        )}
         
         {gameState.step === 'admin' && (
           <AdminPanel 
             users={users} 
             onAddUser={handleAddUser} 
             onToggleUser={handleToggleUser} 
+            onDeleteUser={handleDeleteUser} // تمرير دالة الحذف الجديدة
             onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} 
           />
         )}
@@ -255,33 +295,26 @@ const App: React.FC = () => {
         )}
 
         {gameState.step === 'result' && (
-          <div className="max-w-2xl mx-auto mt-20 p-10 bg-slate-900 rounded-3xl border-2 border-indigo-500/50 shadow-2xl text-center rtl">
-            <Award size={80} className="mx-auto text-yellow-400 mb-6" />
-            <h2 className="text-4xl font-black text-white mb-2">انتهت اللعبة!</h2>
-            <p className="text-slate-400 mb-8">النتائج النهائية للتحدي</p>
+          <div className="max-w-2xl mx-auto mt-20 p-10 bg-black rounded-3xl border-4 border-black shadow-2xl text-center rtl text-[#F7C705]">
+            <Award size={80} className="mx-auto mb-6 text-[#F7C705]" />
+            <h2 className="text-4xl font-black mb-2 uppercase">انتهت المعركة!</h2>
+            <p className="text-white/60 mb-8 font-bold">النتائج النهائية للتحدي</p>
             
             <div className="flex justify-between items-center mb-12">
-              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[0].score > gameState.teams[1].score ? 'bg-indigo-600 ring-4 ring-indigo-400/30' : 'bg-slate-800'}`}>
+              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[0].score > gameState.teams[1].score ? 'bg-[#F7C705] text-black ring-4 ring-white/30' : 'bg-white/10 text-white'}`}>
                 <h3 className="font-bold mb-2">{gameState.teams[0].name}</h3>
                 <p className="text-4xl font-black">{gameState.teams[0].score}</p>
               </div>
-              <div className="px-6 font-black text-2xl text-slate-500">VS</div>
-              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[1].score > gameState.teams[0].score ? 'bg-indigo-600 ring-4 ring-indigo-400/30' : 'bg-slate-800'}`}>
+              <div className="px-6 font-black text-2xl text-white/20">VS</div>
+              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[1].score > gameState.teams[0].score ? 'bg-[#F7C705] text-black ring-4 ring-white/30' : 'bg-white/10 text-white'}`}>
                 <h3 className="font-bold mb-2">{gameState.teams[1].name}</h3>
                 <p className="text-4xl font-black">{gameState.teams[1].score}</p>
               </div>
             </div>
 
-            <div className="bg-indigo-900/40 p-6 rounded-2xl mb-10">
-              <h4 className="text-xl font-bold text-white mb-2">
-                الفائز: {gameState.teams[0].score > gameState.teams[1].score ? gameState.teams[0].name : gameState.teams[1].name}
-              </h4>
-              <p className="text-indigo-300">أداء رائع ومنافسة قوية!</p>
-            </div>
-
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 mx-auto bg-white text-indigo-950 px-10 py-4 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl"
+              className="flex items-center gap-2 mx-auto bg-[#F7C705] text-black px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl"
             >
               <RotateCcw />
               لعبة جديدة
@@ -299,8 +332,8 @@ const App: React.FC = () => {
         />
       )}
 
-      <footer className="relative z-10 mt-auto py-8 text-center text-slate-600 text-sm">
-        <p>© {new Date().getFullYear()} چگار - منصة الألعاب الجماعية</p>
+      <footer className="relative z-10 mt-auto py-8 text-center text-black/40 text-[10px] font-black uppercase tracking-widest">
+        <p>© {new Date().getFullYear()} CHGAR - INTELLECTUAL ARENA</p>
       </footer>
     </div>
   );
