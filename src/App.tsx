@@ -192,10 +192,11 @@ const App: React.FC = () => {
     {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
     <div className="relative">
       <img 
-  src="/img/log.png" 
+  src="/img/lo.jpg" 
   alt="Logo" 
   className="w-20 h-20 rounded-2xl border-4 border-black shadow-2xl object-cover transform hover:rotate-3 transition-transform" 
 />
+
       {/* حركة إضافية: نقطة خضراء تظهر أن اللعبة نشطة */}
       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
     </div>
