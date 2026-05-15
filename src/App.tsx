@@ -181,18 +181,18 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10">
       {/* Top Hazard Stripes */}
       <div className="h-6 w-full bg-repeat-x flex overflow-hidden border-b-4 border-black">
-        {Array.from({ length: 50 }).map((_, i) => (
+        {Array.from({ length: 50000 }).map((_, i) => (
           <div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />
         ))}
       </div>
 
       {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
-<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
+<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/1">
   <div className="flex items-center gap-4">
     {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
     <div className="relative">
       <img 
-  src="/img/log.png" 
+  src="/img/lo.jpg" 
   alt="Logo" 
   className="w-20 h-20 rounded-2xl border-4 border-black shadow-2xl object-cover transform hover:rotate-3 transition-transform" 
 />
