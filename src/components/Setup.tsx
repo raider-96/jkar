@@ -111,31 +111,38 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {CATEGORIES_CONFIG.map(cat => {
-            const isSelected = selectedCats.includes(cat.name);
-            return (
-              <button
-                key={cat.name}
-                onClick={() => toggleCategory(cat.name)}
-                disabled={!isSelected && selectedCats.length >= 6}
-                className={`
-                  relative p-6 h-36 rounded-[32px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center gap-3
-                  ${isSelected 
-                    ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105 -rotate-2' 
-                    : 'bg-white/40 border-black/5 text-black/60 hover:border-black/20 hover:bg-white/60'
-                  }
-                  disabled:opacity-30 disabled:cursor-not-allowed
-                `}
-              >
-                <span className="text-4xl filter grayscale-[0.2]">{cat.icon}</span>
-                <span className="text-xs leading-tight">{cat.name}</span>
-                {isSelected && (
-                  <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705]/50" size={18} />
-                )}
-              </button>
-            );
-          })}
-        </div>
+  {CATEGORIES_CONFIG.map(cat => {
+    const isSelected = selectedCats.includes(cat.name);
+    return (
+      <button
+        key={cat.name}
+        onClick={() => toggleCategory(cat.name)}
+        disabled={!isSelected && selectedCats.length >= 6}
+        className={`
+          relative p-4 h-40 rounded-[32px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center gap-3
+          ${isSelected 
+            ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105 -rotate-2' 
+            : 'bg-white/40 border-black/5 text-black/60 hover:border-black/20 hover:bg-white/60'
+          }
+          disabled:opacity-30 disabled:cursor-not-allowed
+        `}
+      >
+        {/* السطر الذي تم تعديله لعرض الصورة بدلاً من الايقونة النصية */}
+        <img 
+          src={cat.icon} 
+          alt={cat.name} 
+          className={`w-16 h-16 object-contain transition-transform ${isSelected ? 'scale-110' : ''}`} 
+        />
+        
+        <span className="text-xs leading-tight">{cat.name}</span>
+        
+        {isSelected && (
+          <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705]/50" size={18} />
+        )}
+      </button>
+    );
+  })}
+</div>
       </div>
 
       <div className="mt-16 flex justify-center">
