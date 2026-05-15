@@ -131,7 +131,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
         <img 
           src={cat.icon} 
           alt={cat.name} 
-          className={`w-16 h-16 object-contain transition-transform ${isSelected ? 'scale-110' : ''}`} 
+          className={`w-64 h-64 object-contain transition-transform ${isSelected ? 'scale-110' : ''}`} 
         />
         
         <span className="text-xs leading-tight">{cat.name}</span>

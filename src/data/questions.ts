@@ -2,8 +2,8 @@
 import { Question } from '../types';
 
 export const CATEGORIES_CONFIG = [
-  { name: 'مسلسلات عربية', icon: '/img/categories/msar.jpg' },
-  { name: 'مسلسلات خليجية', icon: '/img/categories/msk.jpg' },
+  { name: ' ', icon: '/img/categories/msar.jpg' },
+  { name: ' ', icon: '/img/categories/msk.jpg' },
   { name: 'مسلسلات أجنبية', icon: '/img/categories/msag.jpg' },
   { name: 'مسلسلات أنمي', icon: '/img/categories/msan.jpg' },
   { name: 'باب الحارة', icon: '/img/categories/bab.jpg' },
