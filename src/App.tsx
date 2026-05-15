@@ -186,21 +186,38 @@ const App: React.FC = () => {
         ))}
       </div>
 
-      <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
-        <div className="flex items-center gap-2">
-          <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center font-black text-3xl text-[#F7C705] shadow-xl shadow-black/20">چ</div>
-          <span className="text-3xl font-black tracking-tighter uppercase">چگار</span>
-        </div>
-        
-        {currentUser && (
-          <div className="flex items-center gap-6">
-            <span className="text-black/60 text-sm font-bold hidden md:block">المستخدم: <span className="text-black font-black underline decoration-black/20">{currentUser.username}</span></span>
-            <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:scale-110 transition-transform shadow-lg">
-              <LogOut size={22} />
-            </button>
-          </div>
-        )}
-      </nav>
+      {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
+<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
+  <div className="flex items-center gap-4">
+    {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
+    <div className="relative">
+      <img 
+        src="/img/log.png" 
+        alt="Logo" 
+        className="w-14 h-14 rounded-xl border-2 border-black shadow-lg object-cover" 
+      />
+      {/* حركة إضافية: نقطة خضراء تظهر أن اللعبة نشطة */}
+      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
+    </div>
+    
+    <div className="flex flex-col">
+      <span className="text-3xl font-black tracking-tighter uppercase leading-none">چگار</span>
+      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-1 py-0.5 rounded mt-1 self-start">لعبة العقول</span>
+    </div>
+  </div>
+  
+  {currentUser && (
+    <div className="flex items-center gap-4">
+      <div className="hidden md:flex flex-col items-end">
+        <span className="text-black/50 text-[10px] font-black uppercase">Active Session</span>
+        <span className="text-black font-black text-sm">{currentUser.username}</span>
+      </div>
+      <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:bg-black/80 transition-all shadow-lg active:scale-95">
+        <LogOut size={22} />
+      </button>
+    </div>
+  )}
+</nav>
 
       <main className="relative z-10 pb-20">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
