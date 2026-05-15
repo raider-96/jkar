@@ -3,23 +3,16 @@ import React, { useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: (username: string) => void;
+  onLogin: (username: string, password?: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
-  const [error, setError] = useState('');
-
-  // Simulating a list of allowed users
-  const allowedUsers = ['admin', 'player1', 'player2', 'player3', 'player4', 'user', 'guest'];
+  const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (allowedUsers.includes(username.toLowerCase())) {
-      onLogin(username);
-    } else {
-      setError('عذراً، هذا اليوزر غير مسموح له بالدخول حالياً.');
-    }
+    onLogin(username, password);
   };
 
   return (
@@ -31,28 +24,36 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
         <h1 className="text-4xl font-black text-center mb-3 text-[#F7C705] tracking-tight">مرحباً بك</h1>
-        <p className="text-[#F7C705]/60 text-center mb-10 font-bold">أدخل اليوزر للبدء بالتحدي</p>
+        <p className="text-[#F7C705]/60 text-center mb-10 font-bold">أدخل اليوزر والرمز للبدء بالتحدي</p>
         
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="relative">
-            <label className="block text-sm font-black mb-3 text-[#F7C705]/80 uppercase tracking-widest">اسم المستخدم</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-2xl py-5 px-6 focus:outline-none focus:border-[#F7C705] transition-all text-[#F7C705] text-xl font-black text-center"
-                placeholder="أدخل اليوزر..."
-                required
-              />
-            </div>
+            <label className="block text-sm font-black mb-2 text-[#F7C705]/80 uppercase tracking-widest">اسم المستخدم</label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#F7C705] transition-all text-[#F7C705] text-xl font-black text-center"
+              placeholder="اسم المستخدم"
+              required
+            />
           </div>
-          
-          {error && <p className="text-red-500 text-sm text-center font-black bg-red-500/10 py-3 rounded-xl border border-red-500/20">{error}</p>}
+
+          <div className="relative">
+            <label className="block text-sm font-black mb-2 text-[#F7C705]/80 uppercase tracking-widest">الرمز السري</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-2xl py-4 px-6 focus:outline-none focus:border-[#F7C705] transition-all text-[#F7C705] text-xl font-black text-center"
+              placeholder="الرمز"
+              required
+            />
+          </div>
           
           <button
             type="submit"
-            className="w-full bg-[#F7C705] hover:scale-[1.02] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#F7C705]/10 transition-all active:scale-95 text-xl"
+            className="w-full bg-[#F7C705] hover:scale-[1.02] text-black font-black py-5 rounded-2xl shadow-xl shadow-[#F7C705]/10 transition-all active:scale-95 text-xl mt-4"
           >
             دخول للعبة
           </button>

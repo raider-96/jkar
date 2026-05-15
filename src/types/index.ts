@@ -16,6 +16,7 @@ export interface Question {
 
 export interface UserAccount {
   username: string;
+  password?: string;
   role: 'admin' | 'user';
   isActive: boolean;
   createdAt: string;
