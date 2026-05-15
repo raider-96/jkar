@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { CATEGORIES_CONFIG } from '../data/questions';
+import { motion } from 'framer-motion';
 import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert } from 'lucide-react';
 
 interface SetupProps {
@@ -30,7 +31,11 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6 rtl">
+          <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-5xl mx-auto p-6 rtl"
+    >
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
         <h1 className="text-5xl font-black text-black tracking-tighter uppercase">إعداد اللعبة</h1>
         <div className="flex gap-3">
@@ -61,11 +66,11 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
           </h2>
           <ul className="space-y-3 font-bold text-lg opacity-90">
             <li className="flex gap-3"><span className="text-yellow-500">●</span> يتم تشكيل فريقين متنافسين.</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل فريق يختار 3 أصناف (المجموع 6 أصناف للعبة).</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل فريق يختار 3 أصناف يتميز فيها(المجموع 6 أصناف للعبة).</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> لكل صنف 3 مستويات صعوبة: سهل (100)، متوسط (200)، صعب (400).</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل مستوى صعوبة يحتوي على سؤالين في القيم الواحد.</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل مستوى صعوبة يحتوي على سؤالين .</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span>عند انتهاء وقت الفريق الاول يحق للفريق الثاني تقديم اجابة ايضا وعندة انتهاء الوقت الفريق صاحب الاجابة الصحيحة ياخذ النقاط .</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> الفائز هو الفريق الذي يجمع أكبر عدد من النقاط.</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> الأسئلة التي تتم الإجابة عليها لا تتكرر في المرات القادمة.</li>
           </ul>
         </div>
       )}
@@ -148,7 +153,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
           ابدأ التحدي الآن
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface LoginProps {
   onLogin: (username: string, password?: string) => void;
@@ -16,11 +16,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[70vh] p-4 rtl">
-      <div className="bg-black p-10 rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] w-full max-w-md transform transition-all border-4 border-black/5">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center min-h-[70vh] p-4 rtl"
+    >
+      <div className="bg-black p-10 rounded-[40px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] w-full max-w-md border-4 border-black/5">
         <div className="flex justify-center mb-10">
-          <div className="p-5 bg-[#F7C705] rounded-full shadow-xl">
-            <ShieldCheck size={56} className="text-black" />
+          <div className="p-1 bg-[#F7C705] rounded-[35px] shadow-2xl border-4 border-[#F7C705]/20">
+            <img 
+              src="img/sq.jpeg" 
+              alt="Chgar Logo" 
+              className="w-32 h-32 rounded-[30px] object-cover shadow-inner"
+              onError={(e) => {
+                e.currentTarget.src = "https://via.placeholder.com/150?text=CHGAR";
+              }}
+            />
           </div>
         </div>
         <h1 className="text-4xl font-black text-center mb-3 text-[#F7C705] tracking-tight">مرحباً بك</h1>
@@ -63,7 +74,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <p>مخصص لعدد محدود من اليوزرات</p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

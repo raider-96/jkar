@@ -1,9 +1,8 @@
-
 import React from 'react';
-import { GameState, Difficulty } from '../types';
+import { motion } from 'framer-motion';
+import { GameState, Difficulty, Question } from '../types';
 import { CheckCircle } from 'lucide-react';
 import { CATEGORIES_CONFIG } from '../data/questions';
-import { Question } from '../types';
 
 interface GameBoardProps {
   gameState: GameState;
@@ -42,16 +41,18 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, perm
                     const questionKey = `${catName}-${diff.value}-${num}`;
                     const isDone = gameState.answeredQuestionIds.includes(questionKey);
 
-                    return (
-                      <button
+                       return (
+                      <motion.button
                         key={questionKey}
+                        whileHover={!isDone ? { scale: 1.05 } : {}}
+                        whileTap={!isDone ? { scale: 0.95 } : {}}
                         disabled={isDone}
                         onClick={() => onSelectQuestion(catName, diff.value)}
                         className={`
                           h-24 flex flex-col items-center justify-center rounded-[24px] border-4 transition-all font-black text-2xl
                           ${isDone 
                             ? 'bg-black/5 border-black/5 text-black/10 cursor-not-allowed' 
-                            : 'bg-white border-black text-black hover:scale-105 hover:bg-black hover:text-[#F7C705] shadow-xl'
+                            : 'bg-white border-black text-black hover:bg-black hover:text-[#F7C705] shadow-xl'
                           }
                         `}
                       >
@@ -63,7 +64,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, perm
                             <span className="text-[10px] opacity-60 font-normal">{diff.label}</span>
                           </>
                         )}
-                      </button>
+                    </motion.button>
                     );
                   })}
                 </div>
