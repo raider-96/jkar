@@ -3,9 +3,3 @@
   from { transform: translateX(0); }
   to { transform: translateX(-40px); }
 }
-
-.animate-hazard {
-  display: flex;
-  width: 200%; /* لضمان استمرار الحركة بدون فراغات */
-  animation: slide 1s linear infinite;
-}
