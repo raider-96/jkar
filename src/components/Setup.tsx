@@ -109,8 +109,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
             المختار: {selectedCats.length} / 6
           </span>
         </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
   {CATEGORIES_CONFIG.map(cat => {
     const isSelected = selectedCats.includes(cat.name);
     return (
@@ -119,25 +118,28 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
         onClick={() => toggleCategory(cat.name)}
         disabled={!isSelected && selectedCats.length >= 6}
         className={`
-          relative p-4 h-40 rounded-[32px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center gap-3
+          relative h-40 rounded-[32px] border-4 transition-all duration-300 overflow-hidden flex items-center justify-center
           ${isSelected 
-            ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105 -rotate-2' 
-            : 'bg-white/40 border-black/5 text-black/60 hover:border-black/20 hover:bg-white/60'
+            ? 'bg-black border-black shadow-2xl scale-105 -rotate-2' 
+            : 'bg-white/40 border-black/5 hover:border-black/20 hover:bg-white/60'
           }
           disabled:opacity-30 disabled:cursor-not-allowed
         `}
       >
-        {/* السطر الذي تم تعديله لعرض الصورة بدلاً من الايقونة النصية */}
+        {/* الصورة الآن تملأ المربع بالكامل */}
         <img 
           src={cat.icon} 
           alt={cat.name} 
-          className={`w-64 h-64 object-contain transition-transform ${isSelected ? 'scale-110' : ''}`} 
+          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" 
         />
         
-        <span className="text-xs leading-tight">{cat.name}</span>
-        
+        {/* تم حذف سطر اسم الصنف لجعل الصورة تظهر كاملة */}
+
         {isSelected && (
-          <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705]/50" size={18} />
+          /* إضافة طبقة تظليل خفيفة عند الاختيار لتمييز علامة الصح */
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+             <CheckCircle2 className="text-[#F7C705]" size={40} />
+          </div>
         )}
       </button>
     );
