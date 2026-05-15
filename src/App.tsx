@@ -200,21 +200,31 @@ const App: React.FC = () => {
       <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">تحدي المعلومات</span>
     </div>
   </div>
-{/* عرض صورة الصقر فقط في حالة الـ login بدون نافذة تسجيل الدخول */}
+
 {gameState.step === 'login' && (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-1000">
-    <div className="relative z-20">
+  <div className="flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in duration-1000">
+    
+    {/* الدائرة الصفراء الكبيرة التي كانت تحتوي على الدرع */}
+    <div className="relative mb-8">
+      <div className="w-40 h-40 bg-[#F7C705] rounded-full flex items-center justify-center shadow-[0_10px_40px_rgba(0,0,0,0.3)] border-4 border-black/5">
+        {/* وضع صورة الصقر مكان أيقونة الصح */}
         <img 
           src="/img/sq.jpeg" 
-          alt="Chgar Eagle" 
-          className="w-64 h-64 object-contain drop-shadow-2xl" 
+          alt="Chgar Eagle Icon" 
+          className="w-28 h-28 object-contain drop-shadow-md" 
         />
+      </div>
+      
+      {/* لمسة إضافية: النقطة الخضراء الصغيرة التي تظهر في تصميمك */}
+      <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 border-4 border-[#F7C705] rounded-full"></div>
+    </div>
+
+    {/* إظهار نافذة تسجيل الدخول مباشرة تحت الدائرة */}
+    <div className="w-full max-w-md transform transition-all">
+       <Login onLogin={handleLogin} />
     </div>
   </div>
 )}
-  {/* ... باقي كود المستخدم والـ logout ... */}
-
-  
   {currentUser && (
     <div className="flex items-center gap-4">
       <div className="hidden md:flex flex-col items-end">
