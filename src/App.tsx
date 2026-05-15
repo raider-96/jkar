@@ -188,19 +188,14 @@ const App: React.FC = () => {
 
       {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
 {/* 2. الهيدر (Navbar) */}
-<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4">
-  <div className="flex items-center gap-5">
-    <div className="relative">
-      {/* التعديل هنا: حذف الإطار الأسود والخلفية */}
-     
-      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
+<nav>
+  <div>
+    <div>     
+      <div></div>
     </div>
-    <div className="flex flex-col">
-      <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
-      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">تحدي المعلومات</span>
+    <div>
     </div>
   </div>
-
 {gameState.step === 'login' && (
   <div className="flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in duration-1000">
     
