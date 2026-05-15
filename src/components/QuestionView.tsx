@@ -44,9 +44,10 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md rtl">
-      <div className="bg-[#F7C705] border-8 border-black w-full max-w-4xl rounded-[60px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300">
-        <div className="px-8 py-6 flex justify-between items-center bg-black text-[#F7C705]">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md rtl">
+      <div className="bg-[#F7C705] border-8 border-black w-full max-w-4xl max-h-[90vh] rounded-[60px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col animate-in zoom-in-95 duration-300">
+        {/* Header - Stays Fixed */}
+        <div className="px-8 py-6 flex justify-between items-center bg-black text-[#F7C705] shrink-0">
           <div>
             <span className="text-[10px] uppercase font-black opacity-60 block tracking-widest mb-1">
               {isSecondChance ? 'فرصة ذهبية ثانية:' : 'دور الفريق:'}
@@ -61,14 +62,15 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
           </div>
         </div>
 
-        <div className="p-10 md:p-16 text-center">
+        {/* Content Area - Scrollable */}
+        <div className="p-10 md:p-16 text-center overflow-y-auto custom-scrollbar flex-1">
           <div className="flex flex-col items-center gap-6 mb-12">
             <div className="flex items-center gap-3 bg-black text-[#F7C705] px-8 py-3 rounded-full text-lg font-black shadow-xl">
               {getChallengeIcon()}
               <span>{getChallengeLabel()} • {question.points} نقطة</span>
             </div>
             {question.image && (
-              <div className="w-full max-w-lg h-64 overflow-hidden rounded-[40px] border-8 border-black shadow-2xl mt-4">
+              <div className="w-full max-w-lg h-64 overflow-hidden rounded-[40px] border-8 border-black shadow-2xl mt-4 shrink-0">
                 <img src={question.image} alt="Challenge" className="w-full h-full object-cover" />
               </div>
             )}
@@ -78,7 +80,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
             {question.question}
           </h2>
 
-          <div className="space-y-8">
+          <div className="space-y-8 pb-10">
             {!showAnswer ? (
               <button
                 onClick={() => setShowAnswer(true)}
