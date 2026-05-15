@@ -197,7 +197,7 @@ const App: React.FC = () => {
         alt="Logo" 
         className="w-24 h-24 object-contain" 
       />
-      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-5 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
+      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
     </div>
     <div className="flex flex-col">
       <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
