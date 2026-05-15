@@ -187,34 +187,25 @@ const App: React.FC = () => {
       </div>
 
       {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
-{/* 2. الهيدر (Navbar) */}
-<nav>
-  <div>
-    <div>     
-      <div></div>
+<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
+  <div className="flex items-center gap-4">
+    {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
+    <div className="relative">
+      <img 
+  src="/img/lo.jpg" 
+  alt="Logo" 
+  className="w-20 h-20 rounded-2xl border-4 border-black shadow-2xl object-cover transform hover:rotate-3 transition-transform" 
+/>
+      {/* حركة إضافية: نقطة خضراء تظهر أن اللعبة نشطة */}
+      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
     </div>
-    <div>
-    </div>
-  </div>
-{gameState.step === 'login' && (
-  <div className="flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in duration-1000">
     
-    {/* الدائرة الصفراء الكبيرة التي كانت تحتوي على الدرع */}
-    <div>
-      <div>
-        {/* وضع صورة الصقر مكان أيقونة الصح */}
-        <img 
-          src="/img/sq.jpeg" 
-          alt="Chgar Eagle Icon" 
-          className="w-28 h-28 object-contain drop-shadow-md" 
-        />
-      </div>
-      
-      {/* لمسة إضافية: النقطة الخضراء الصغيرة التي تظهر في تصميمك */}
-      <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 border-4 border-[#F7C705] rounded-full"></div>
+    <div className="flex flex-col">
+      <span className="text-3xl font-black tracking-tighter uppercase leading-none">چگار</span>
+      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-1 py-0.5 rounded mt-1 self-start">لعبة العقول</span>
     </div>
   </div>
-)}
+  
   {currentUser && (
     <div className="flex items-center gap-4">
       <div className="hidden md:flex flex-col items-end">
