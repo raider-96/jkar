@@ -192,11 +192,7 @@ const App: React.FC = () => {
   <div className="flex items-center gap-5">
     <div className="relative">
       {/* التعديل هنا: حذف الإطار الأسود والخلفية */}
-      <img 
-        src="/img/lo.jpg" 
-        alt="Logo" 
-        className="w-24 h-24 object-contain" 
-      />
+     
       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
     </div>
     <div className="flex flex-col">
