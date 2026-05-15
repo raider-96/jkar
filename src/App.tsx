@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GameState, Team, Question, Difficulty, UserAccount } from './types';
 import { QUESTIONS } from './data/questions';
@@ -138,7 +139,7 @@ const App: React.FC = () => {
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ['#F7C705', '#000000', '#ffffff']
+        colors: ['#6366f1', '#a855f7', '#ec4899']
       });
     }
 
@@ -177,53 +178,49 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10 overflow-x-hidden">
-      
+    <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10">
+      {/* Top Hazard Stripes */}
+      <div className="h-6 w-full bg-repeat-x flex overflow-hidden border-b-4 border-black">
+        {Array.from({ length: 50 }).map((_, i) => (
+          <div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />
+        ))}
+      </div>
 
-      {/* 2. الهيدر (Navbar) */}
-      <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4">
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <img 
-              src="/img/lo.jpg" 
-              alt="Logo" 
-              className="w-24 h-24 object-contain drop-shadow-xl" 
-            />
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
-            <span className="text-[10px] font-bold bg-black text-[#F7C705] px-2 py-0.5 rounded mt-2 self-start shadow-sm">تحدي المعلومات</span>
-          </div>
-        </div>
-        
-        {currentUser && (
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end">
-              <span className="text-black/50 text-[10px] font-black uppercase">Active Admin</span>
-              <span className="text-black font-black text-sm">{currentUser.username}</span>
-            </div>
-            <button onClick={handleLogout} className="bg-black text-[#F7C705] p-3 rounded-2xl hover:bg-black/80 transition-all shadow-lg active:scale-95">
-              <LogOut size={22} />
-            </button>
-          </div>
-        )}
-      </nav>
+      {/* ابحث عن قسم الـ nav في الكود الخاص بك واستبدله بهذا التنسيق */}
+<nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
+  <div className="flex items-center gap-4">
+    {/* إضافة الشعار هنا بدلاً من المربع الأسود القديم */}
+    <div className="relative">
+      <img 
+  src="/img/log.png" 
+  alt="Logo" 
+  className="w-20 h-20 rounded-2xl border-4 border-black shadow-2xl object-cover transform hover:rotate-3 transition-transform" 
+/>
+      {/* حركة إضافية: نقطة خضراء تظهر أن اللعبة نشطة */}
+      <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 border-2 border-[#F7C705] rounded-full animate-pulse"></div>
+    </div>
+    
+    <div className="flex flex-col">
+      <span className="text-3xl font-black tracking-tighter uppercase leading-none">چگار</span>
+      <span className="text-[10px] font-bold bg-black text-[#F7C705] px-1 py-0.5 rounded mt-1 self-start">لعبة العقول</span>
+    </div>
+  </div>
+  
+  {currentUser && (
+    <div className="flex items-center gap-4">
+      <div className="hidden md:flex flex-col items-end">
+        <span className="text-black/50 text-[10px] font-black uppercase">Active Session</span>
+        <span className="text-black font-black text-sm">{currentUser.username}</span>
+      </div>
+      <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:bg-black/80 transition-all shadow-lg active:scale-95">
+        <LogOut size={22} />
+      </button>
+    </div>
+  )}
+</nav>
 
       <main className="relative z-10 pb-20">
-        {/* 3. شاشة الدخول مع الصقر في الوسط */}
-        {gameState.step === 'login' && (
-          <div className="flex flex-col items-center">
-            <div className="mb-[-25px] z-20 relative animate-bounce">
-                <img 
-                  src="/img/sq.jpng" 
-                  alt="Main Icon" 
-                  className="w-44 h-44 object-contain drop-shadow-2xl"
-                />
-            </div>
-            <Login onLogin={handleLogin} />
-          </div>
-        )}
+        {gameState.step === 'login' && <Login onLogin={handleLogin} />}
         
         {gameState.step === 'admin' && (
           <AdminPanel 
@@ -258,26 +255,33 @@ const App: React.FC = () => {
         )}
 
         {gameState.step === 'result' && (
-          <div className="max-w-2xl mx-auto mt-20 p-10 bg-black rounded-3xl border-4 border-black shadow-2xl text-center rtl text-[#F7C705]">
-            <Award size={80} className="mx-auto mb-6 text-[#F7C705]" />
-            <h2 className="text-4xl font-black mb-2 uppercase">انتهت المعركة!</h2>
-            <p className="text-white/60 mb-8 font-bold">النتائج النهائية للتحدي</p>
+          <div className="max-w-2xl mx-auto mt-20 p-10 bg-slate-900 rounded-3xl border-2 border-indigo-500/50 shadow-2xl text-center rtl">
+            <Award size={80} className="mx-auto text-yellow-400 mb-6" />
+            <h2 className="text-4xl font-black text-white mb-2">انتهت اللعبة!</h2>
+            <p className="text-slate-400 mb-8">النتائج النهائية للتحدي</p>
             
             <div className="flex justify-between items-center mb-12">
-              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[0].score > gameState.teams[1].score ? 'bg-[#F7C705] text-black ring-4 ring-white/30' : 'bg-white/10 text-white'}`}>
+              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[0].score > gameState.teams[1].score ? 'bg-indigo-600 ring-4 ring-indigo-400/30' : 'bg-slate-800'}`}>
                 <h3 className="font-bold mb-2">{gameState.teams[0].name}</h3>
                 <p className="text-4xl font-black">{gameState.teams[0].score}</p>
               </div>
-              <div className="px-6 font-black text-2xl text-white/20">VS</div>
-              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[1].score > gameState.teams[0].score ? 'bg-[#F7C705] text-black ring-4 ring-white/30' : 'bg-white/10 text-white'}`}>
+              <div className="px-6 font-black text-2xl text-slate-500">VS</div>
+              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[1].score > gameState.teams[0].score ? 'bg-indigo-600 ring-4 ring-indigo-400/30' : 'bg-slate-800'}`}>
                 <h3 className="font-bold mb-2">{gameState.teams[1].name}</h3>
                 <p className="text-4xl font-black">{gameState.teams[1].score}</p>
               </div>
             </div>
 
+            <div className="bg-indigo-900/40 p-6 rounded-2xl mb-10">
+              <h4 className="text-xl font-bold text-white mb-2">
+                الفائز: {gameState.teams[0].score > gameState.teams[1].score ? gameState.teams[0].name : gameState.teams[1].name}
+              </h4>
+              <p className="text-indigo-300">أداء رائع ومنافسة قوية!</p>
+            </div>
+
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 mx-auto bg-[#F7C705] text-black px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl border-b-4 border-black/30"
+              className="flex items-center gap-2 mx-auto bg-white text-indigo-950 px-10 py-4 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl"
             >
               <RotateCcw />
               لعبة جديدة
@@ -295,8 +299,8 @@ const App: React.FC = () => {
         />
       )}
 
-      <footer className="relative z-10 mt-auto py-8 text-center text-black/40 text-[10px] font-black uppercase tracking-widest">
-        <p>© {new Date().getFullYear()} CHGAR - INTELLECTUAL ARENA</p>
+      <footer className="relative z-10 mt-auto py-8 text-center text-slate-600 text-sm">
+        <p>© {new Date().getFullYear()} چگار - منصة الألعاب الجماعية</p>
       </footer>
     </div>
   );
