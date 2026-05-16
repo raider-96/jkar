@@ -34,8 +34,7 @@ const Question = mongoose.model('Question', QuestionSchema);
 
 // 2. الاتصال بقاعدة البيانات والتحقق من وجود الأدمن
 // تم تعديل المنفذ الافتراضي إلى 27017 وهو المنفذ القياسي لـ MongoDB
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/chgar';
-
+const MONGO_URI = 'mongodb+srv://reder:reder1212@cluster0.xnenrtq.mongodb.net/chgar?retryWrites=true&w=majority&appName=Cluster0';
 mongoose.connect(MONGO_URI)
   .then(async () => {
     console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!');
