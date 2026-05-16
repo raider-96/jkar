@@ -9,15 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. الاتصال بقاعدة البيانات السحابية أو المحلية
-// يمكنك تغيير الرابط بالأسفل برابط MongoDB Atlas السحابي لاحقاً لربط الأجهزة عن بعد
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:21017/chgar';
-
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!'))
-  .catch(err => console.error('❌ فشل الاتصال بقاعدة البيانات:', err));
-
-// 2. تعريف الهياكل (Schemas & Models) بناءً على الـ Types الخاصة بالموقع
+// 1. تعريف الهياكل (Schemas & Models) في الأعلى لاستخدامها عند الاتصال
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, default: "" },
@@ -39,6 +31,35 @@ const QuestionSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 const Question = mongoose.model('Question', QuestionSchema);
+
+// 2. الاتصال بقاعدة البيانات والتحقق من وجود الأدمن
+// تم تعديل المنفذ الافتراضي إلى 27017 وهو المنفذ القياسي لـ MongoDB
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/chgar';
+
+mongoose.connect(MONGO_URI)
+  .then(async () => {
+    console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!');
+    
+    try {
+      // فحص إذا كان حساب الأدمن الافتراضي موجوداً في قاعدة البيانات
+      const adminExists = await User.findOne({ username: 'admin' });
+      
+      if (!adminExists) {
+        // إنشاء حساب الأدمن تلقائياً إذا كانت قاعدة البيانات فارغة
+        await User.create({
+          username: 'admin',
+          password: '123', // يمكنك إبقاء الرمز فارغاً "" أو كتابة رمز افتراضي كـ 123 لتسجيل الدخول
+          role: 'admin',
+          isActive: true
+        });
+        console.log('👤 تم إنشاء حساب الأدمن الافتراضي بنجاح في قاعدة البيانات!');
+      }
+    } catch (adminErr) {
+      console.error('❌ خطأ أثناء التحقق من حساب الأدمن الافتراضي:', adminErr.message);
+    }
+  })
+  .catch(err => console.error('❌ فشل الاتصال بقاعدة البيانات:', err));
+
 
 // ================= 3. مسارات واجهة برمجة التطبيقات (API Routes) =================
 
@@ -118,5 +139,5 @@ app.post('/api/questions', async (req, res) => {
 // 4. تشغيل السيرفر على منفذ مخصص
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 السيرفر يعمل كفاءة على المنفذ: http://localhost:${PORT}`);
+  console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: http://localhost:${PORT}`);
 });
