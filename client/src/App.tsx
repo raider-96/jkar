@@ -159,42 +159,48 @@ const handleAddUser = async (username: string, password?: string) => {
     }
   };
 
-  // 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات السحابية
-const handleAddQuestion = async (q: Question) => {
-  try {
-    // بناء الكائن بشكل صريح ليتطابق مع الـ Schema بالسيرفر
-    const questionData = {
-      id: q.id || Date.now().toString(),
-      question: q.question,
-      options: q.options || [],
-      answer: q.answer,
-      category: q.category,
-      difficulty: q.difficulty,
-      points: Number(q.points) || 10 // تحويل النقاط لرقم للتأكد من توافق البيانات
-    };
+// 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات مع حماية كاملة للواجهة من الانهيار
+  const handleAddQuestion = async (q: Question) => {
+    try {
+      // بناء الكائن بشكل صريح ومضمون ليتطابق مع الـ Schema بالسيرفر
+      const questionData = {
+        id: q.id || Date.now().toString(),
+        question: q.question || '',
+        options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
+        answer: q.answer || '',
+        category: q.category || 'عام', // تعيين تصنيف افتراضي إذا كان فارغاً لمنع خطأ startsWith
+        difficulty: q.difficulty || 'easy',
+        points: Number(q.points) || 10
+      };
 
-    const response = await fetch(`${API_URL}/questions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(questionData)
-    });
+      const response = await fetch(`${API_URL}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(questionData)
+      });
 
-    if (response.ok) {
-      const newQuestion = await response.json();
-      setAllQuestions(prev => [...prev, newQuestion]);
-      alert('تم إضافة السؤال بنجاح إلى قاعدة البيانات!');
-    } else {
-      const errData = await response.json();
-      alert(errData.error || 'فشلت إضافة السؤال، راجع الحقول المطلوبة');
+      const resData = await response.json();
+
+      if (response.ok) {
+        // نتحقق أن الكائن الراجع يحتوي على حقل category نصي قبل حقنه بالصفحة
+        if (resData && typeof resData.category === 'string') {
+          setAllQuestions(prev => [...prev, resData]);
+          alert('تم إضافة السؤال بنجاح إلى قاعدة البيانات!');
+        } else {
+          alert('تم الحفظ في السيرفر، يرجى تحديث الصفحة لتحديث القائمة.');
+        }
+      } else {
+        alert(resData.error || resData.message || 'فشلت إضافة السؤال، راجع الحقول المطلوبة');
+      }
+    } catch (err) {
+      console.error("خطأ في إضافة السؤال للسيرفر:", err);
+      alert('حدث خطأ أثناء الاتصال بالسيرفر');
     }
-  } catch (err) {
-    console.error("خطأ في إضافة السؤال للسيرفر:", err);
-  }
-};
+  };
 
   const handleDeleteQuestion = (id: string) => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    const updated = safeQuestions.filter(q => q.id !== id);
+    const updated = safeQuestions.filter(q => q && q.id !== id);
     setAllQuestions(updated);
   };
 
