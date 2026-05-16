@@ -29,7 +29,7 @@ const App: React.FC = () => {
     key: string;
   } | null>(null);
 
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
