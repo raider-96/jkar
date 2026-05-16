@@ -49,23 +49,48 @@ const App: React.FC = () => {
       .catch(err => console.error("خطأ في جلب الأسئلة:", err));
   }, []);
 
-  const handleLogin = (username: string, password?: string) => {
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-    if (user) {
-      if (!user.isActive) {
-        alert('هذا اليوزر معطل حالياً');
-        return;
-      }
-      if (user.password && user.password !== password) {
-        alert('الرمز السري غير صحيح');
-        return;
-      }
-      setCurrentUser(user);
-      setGameState(prev => ({ ...prev, step: 'setup' }));
+ const handleLogin = (username: string, password?: string) => {
+  // 1. تحويل النص لحروف صغيرة لضمان مطابقة الكلمة بدقة
+  const trimmedUsername = username.trim().toLowerCase();
+
+  // 2. قاطع فوري للأدمن: يدخل مباشرة دون النظر لقائمة اليوزرز من السيرفر
+  if (trimmedUsername === 'admin') {
+    if (password === '123' || !password || password === '...') {
+      const adminUser: any = {
+        _id: 'admin-local-id',
+        username: 'admin',
+        role: 'admin',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      
+      setCurrentUser(adminUser);
+      setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+      return; // إنهاء الدالة فوراً هنا ومنع الوصول لرسالة اليوزر غير موجود
     } else {
-      alert('اليوزر غير موجود');
+      alert('الرمز السري غير صحيح لحساب الأدمن');
+      return;
     }
-  };
+  }
+
+  // 3. الفحص الطبيعي لبقية مستخدمي اللعبة العاديين من السيرفر السحابي
+  const user = users && users.find((u: any) => u.username.toLowerCase() === trimmedUsername);
+
+  if (user) {
+    if (!user.isActive) {
+      alert('هذا اليوزر معطل حالياً');
+      return;
+    }
+    if (user.password && user.password !== password) {
+      alert('الرمز السري غير صحيح');
+      return;
+    }
+    setCurrentUser(user);
+    setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+  } else {
+    alert('اليوزر غير موجود');
+  }
+};
 
   // 2. إرسال المستخدم الجديد إلى قاعدة البيانات عبر السيرفر
   const handleAddUser = async (username: string, password?: string) => {
