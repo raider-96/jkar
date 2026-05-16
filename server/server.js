@@ -135,8 +135,14 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
-// 4. تشغيل السيرفر على منفذ مخصص
+// 4. تشغيل السيرفر (محلياً فقط) وتصديره لـ Vercel
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: http://localhost:${PORT}`);
-});
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: http://localhost:${PORT}`);
+  });
+}
+
+// هذا السطر هو الأهم لكي يشتغل السيرفر على Vercel بنجاح
+module.exports = app;
