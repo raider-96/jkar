@@ -30,8 +30,8 @@ const App: React.FC = () => {
   } | null>(null);
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
-  const [users, setUsers] = useState<UserAccount[]>([]);
-  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
   // 1. جلب المستخدمين والأسئلة من السيرفر فور تشغيل اللعبة
