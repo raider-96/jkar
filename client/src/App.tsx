@@ -1,7 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameState, Team, Question, Difficulty, UserAccount } from './types';
-import { QUESTIONS } from './data/questions';
 import Login from './components/Login';
 import Setup from './components/Setup';
 import GameBoard from './components/GameBoard';
@@ -11,11 +9,8 @@ import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award } from 'lucide-react';
 
-const DEFAULT_USERS: UserAccount[] = [
-  { username: 'admin', role: 'admin', isActive: true, createdAt: new Date().toISOString() },
-  { username: 'player1', role: 'user', isActive: true, createdAt: new Date().toISOString() },
-  { username: 'user', role: 'user', isActive: true, createdAt: new Date().toISOString() },
-];
+// رابط السيرفر المشترك
+const API_URL = 'http://localhost:5000/api';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
@@ -35,29 +30,23 @@ const App: React.FC = () => {
   } | null>(null);
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
-  const [users, setUsers] = useState<UserAccount[]>(() => {
-    const saved = localStorage.getItem('chagar_users');
-    return saved ? JSON.parse(saved) : DEFAULT_USERS;
-  });
-
-  // Load custom questions from storage
-  const [allQuestions, setAllQuestions] = useState<Question[]>(() => {
-    const saved = localStorage.getItem('chagar_custom_questions');
-    const custom = saved ? JSON.parse(saved) : [];
-    return [...QUESTIONS, ...custom];
-  });
-
+  const [users, setUsers] = useState<UserAccount[]>([]);
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
+  // 1. جلب المستخدمين والأسئلة من السيرفر فور تشغيل اللعبة
   useEffect(() => {
-    localStorage.setItem('chagar_users', JSON.stringify(users));
-  }, [users]);
+    // جلب المستخدمين
+    fetch(`${API_URL}/users`)
+      .then(res => res.json())
+      .then(data => setUsers(data))
+      .catch(err => console.error("خطأ في جلب المستخدمين:", err));
 
-  useEffect(() => {
-    const saved = localStorage.getItem('chagar_used_questions');
-    if (saved) {
-      setPermanentlyUsedIds(JSON.parse(saved));
-    }
+    // جلب كافة الأسئلة (الأساسية والمضافة)
+    fetch(`${API_URL}/questions`)
+      .then(res => res.json())
+      .then(data => setAllQuestions(data))
+      .catch(err => console.error("خطأ في جلب الأسئلة:", err));
   }, []);
 
   const handleLogin = (username: string, password?: string) => {
@@ -78,40 +67,80 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddUser = (username: string, password?: string) => {
-    if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) return;
-    const newUser: UserAccount = {
-      username,
-      password,
-      role: 'user',
-      isActive: true,
-      createdAt: new Date().toISOString()
-    };
-    setUsers([...users, newUser]);
+  // 2. إرسال المستخدم الجديد إلى قاعدة البيانات عبر السيرفر
+  const handleAddUser = async (username: string, password?: string) => {
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, role: 'user' })
+      });
+
+      if (response.ok) {
+        const newUser = await response.json();
+        setUsers(prev => [...prev, newUser]);
+      } else {
+        const errData = await response.json();
+        alert(errData.error);
+      }
+    } catch (err) {
+      console.error("خطأ أثناء إضافة المستخدم:", err);
+    }
   };
 
-  const handleToggleUser = (username: string) => {
-    setUsers(users.map(u => 
-      u.username === username ? { ...u, isActive: !u.isActive } : u
-    ));
+  // 3. تعديل حالة الحساب من السيرفر (تفعيل/تعطيل)
+  const handleToggleUser = async (username: string) => {
+    try {
+      const response = await fetch(`${API_URL}/users/${username}/toggle`, {
+        method: 'PATCH'
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUsers(prev => prev.map(u => u.username === username ? updatedUser : u));
+      }
+    } catch (err) {
+      console.error("خطأ أثناء تعديل حالة الحساب:", err);
+    }
   };
 
-  const handleDeleteUser = (username: string) => {
-    setUsers(users.filter(u => u.username !== username));
+  // 4. حذف المستخدم نهائياً من السيرفر وقاعدة البيانات
+  const handleDeleteUser = async (username: string) => {
+    try {
+      const response = await fetch(`${API_URL}/users/${username}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        setUsers(prev => prev.filter(u => u.username !== username));
+      }
+    } catch (err) {
+      console.error("خطأ أثناء حذف المستخدم:", err);
+    }
   };
 
-  const handleAddQuestion = (q: Question) => {
-    const updated = [...allQuestions, q];
-    setAllQuestions(updated);
-    const customOnly = updated.filter(item => item.id.startsWith('custom-'));
-    localStorage.setItem('chagar_custom_questions', JSON.stringify(customOnly));
+  // 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات السحابية
+  const handleAddQuestion = async (q: Question) => {
+    try {
+      const response = await fetch(`${API_URL}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(q)
+      });
+
+      if (response.ok) {
+        const newQuestion = await response.json();
+        setAllQuestions(prev => [...prev, newQuestion]);
+      }
+    } catch (err) {
+      console.error("خطأ في إضافة السؤال للسيرفر:", err);
+    }
   };
 
   const handleDeleteQuestion = (id: string) => {
+    // يمكنك تطبيق مسار DELETE في السيرفر بنفس النمط إذا كنت تحذف أسئلة من قاعدة البيانات
     const updated = allQuestions.filter(q => q.id !== id);
     setAllQuestions(updated);
-    const customOnly = updated.filter(item => item.id.startsWith('custom-'));
-    localStorage.setItem('chagar_custom_questions', JSON.stringify(customOnly));
   };
 
   const handleStartGame = (t1: string, t2: string, cats: string[]) => {
@@ -177,7 +206,6 @@ const App: React.FC = () => {
     const newPermanentUsed = [...permanentlyUsedIds, activeQuestion.question.id];
     
     setPermanentlyUsedIds(newPermanentUsed);
-    localStorage.setItem('chagar_used_questions', JSON.stringify(newPermanentUsed));
 
     const nextTurn = gameState.currentTurn === 0 ? 1 : 0;
     const totalSlots = gameState.selectedCategories.length * 3 * 2;
@@ -209,7 +237,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10">
-      {/* Top Hazard Stripes */}
       <div className="h-6 w-full bg-repeat-x flex overflow-hidden border-b-4 border-black">
         {Array.from({ length: 50 }).map((_, i) => (
           <div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />
@@ -223,7 +250,6 @@ const App: React.FC = () => {
             alt="Chgar" 
             className="w-16 h-16 rounded-[20px] shadow-2xl border-4 border-black"
             onError={(e) => {
-              // Fallback to text logo if image fails
               e.currentTarget.style.display = 'none';
             }}
           />
@@ -239,12 +265,6 @@ const App: React.FC = () => {
               <span className="text-black/60 text-[10px] font-black uppercase tracking-widest">المستخدم الحالي</span>
               <span className="text-black font-black text-lg">{currentUser.username}</span>
             </div>
-            <img 
-              src="https://raw.githubusercontent.com/stackblitz/stackblitz-images/main/chgar-logo.png" 
-              alt="Logo" 
-              className="w-12 h-12 rounded-xl border-2 border-black hidden md:block"
-              onError={(e) => (e.currentTarget.style.display = 'none')}
-            />
             <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:scale-110 transition-transform shadow-lg">
               <LogOut size={22} />
             </button>
@@ -293,9 +313,9 @@ const App: React.FC = () => {
         )}
 
         {gameState.step === 'result' && (
-          <div className="max-w-2xl mx-auto mt-20 p-10 bg-slate-900 rounded-3xl border-2 border-indigo-500/50 shadow-2xl text-center rtl">
+          <div className="max-w-2xl mx-auto mt-20 p-10 bg-slate-900 rounded-3xl border-2 border-indigo-500/50 shadow-2xl text-center rtl text-white">
             <Award size={80} className="mx-auto text-yellow-400 mb-6" />
-            <h2 className="text-4xl font-black text-white mb-2">انتهت اللعبة!</h2>
+            <h2 className="text-4xl font-black mb-2">انتهت اللعبة!</h2>
             <p className="text-slate-400 mb-8">النتائج النهائية للتحدي</p>
             
             <div className="flex justify-between items-center mb-12">
@@ -311,7 +331,7 @@ const App: React.FC = () => {
             </div>
 
             <div className="bg-indigo-900/40 p-6 rounded-2xl mb-10">
-              <h4 className="text-xl font-bold text-white mb-2">
+              <h4 className="text-xl font-bold mb-2">
                 الفائز: {gameState.teams[0].score > gameState.teams[1].score ? gameState.teams[0].name : gameState.teams[1].name}
               </h4>
               <p className="text-indigo-300">أداء رائع ومنافسة قوية!</p>
