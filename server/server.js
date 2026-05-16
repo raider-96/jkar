@@ -34,7 +34,7 @@ const QuestionSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
 const Question = mongoose.models.Question || mongoose.model('Question', QuestionSchema);
 
-const MONGO_URI = 'mongodb+srv://reder:reder1212@cluster0.xnenrtq.mongodb.net/?appName=Cluster0';
+const MONGO_URI = 'mongodb+srv://reder:reder1212@cluster0.xnenrtq.mongodb.net/chgar?retryWrites=true&w=majority&appName=Cluster0';
 
 const connectDB = async () => {
   // إذا كان الاتصال قائماً بالفعل، لا تقم بإنشاء اتصال جديد
