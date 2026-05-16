@@ -159,16 +159,19 @@ const handleAddUser = async (username: string, password?: string) => {
     }
   };
 
-// 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات مع حماية كاملة للواجهة من الانهيار
+// 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات مع حماية كاملة ومنع إفراغ الحقول إلا بعد النجاح
   const handleAddQuestion = async (q: Question) => {
     try {
-      // بناء الكائن بشكل صريح ومضمون ليتطابق مع الـ Schema بالسيرفر
+      // بناء الكائن بشكل صريح ليتطابق تماماً مع الـ Schema بالسيرفر
+      // نقوم بتوليد ID مميز يبدأ بـ custom- للتوافق مع دالة الفلترة في لوحة الإدارة
+      const generatedId = `custom-${Date.now()}`;
+
       const questionData = {
-        id: q.id || Date.now().toString(),
+        id: generatedId, 
         question: q.question || '',
         options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
         answer: q.answer || '',
-        category: q.category || 'عام', // تعيين تصنيف افتراضي إذا كان فارغاً لمنع خطأ startsWith
+        category: q.category || 'عام', 
         difficulty: q.difficulty || 'easy',
         points: Number(q.points) || 10
       };
@@ -182,22 +185,24 @@ const handleAddUser = async (username: string, password?: string) => {
       const resData = await response.json();
 
       if (response.ok) {
-        // نتحقق أن الكائن الراجع يحتوي على حقل category نصي قبل حقنه بالصفحة
-        if (resData && typeof resData.category === 'string') {
+        // نتحقق أن الكائن الراجع سليم قبل حقنه بالصفحة
+        if (resData && (resData.id || resData._id)) {
           setAllQuestions(prev => [...prev, resData]);
-          alert('تم إضافة السؤال بنجاح إلى قاعدة البيانات!');
-        } else {
-          alert('تم الحفظ في السيرفر، يرجى تحديث الصفحة لتحديث القائمة.');
+          alert('🎉 تم إضافة السؤال بنجاح وتخزينه في قاعدة البيانات!');
+          
+          // 👈 ملاحظة هامة: إفراغ الخانات يتم فقط هنا داخل شرط النجاح!
+          // إذا كان كود لوحة الإدارة يعتمد على دالة لتنظيف الحقول ممررة من الـ AdminPanel، 
+          // تأكد من تركها تعمل فقط في حالة النجاح.
         }
       } else {
-        alert(resData.error || resData.message || 'فشلت إضافة السؤال، راجع الحقول المطلوبة');
+        // إذا رفض السيرفر الحفظ، سيخبرك بالسبب هنا بدلاً من إفراغ الخانات
+        alert(`❌ فشل السيرفر في التخزين: ${resData.error || resData.message || 'تأكد من ملء جميع الحقول بشكل صحيح'}`);
       }
     } catch (err) {
       console.error("خطأ في إضافة السؤال للسيرفر:", err);
-      alert('حدث خطأ أثناء الاتصال بالسيرفر');
+      alert('❌ حدث خطأ أثناء الاتصال بالسيرفر، تأكد من تشغيل الباك إند');
     }
   };
-
   const handleDeleteQuestion = (id: string) => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
     const updated = safeQuestions.filter(q => q && q.id !== id);
