@@ -36,17 +36,23 @@ const Question = mongoose.models.Question || mongoose.model('Question', Question
 
 const MONGO_URI = 'mongodb+srv://reder:reder1212@cluster0.xnenrtq.mongodb.net/chgar?retryWrites=true&w=majority&appName=Cluster0';
 
-// 2. دالة الاتصال الذكية المتوافقة مع Vercel (تمنع انهيار 500)
 const connectDB = async () => {
+  // إذا كان الاتصال قائماً بالفعل، لا تقم بإنشاء اتصال جديد
   if (mongoose.connection.readyState >= 1) return;
+
   try {
-    await mongoose.connect(MONGO_URI);
-    console.log('✅ متصل بـ MongoDB Atlas');
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("تم الاتصال بقاعدة البيانات بنجاح");
   } catch (err) {
-    console.error('❌ خطأ اتصال قاعدة البيانات:', err.message);
+    console.error("خطأ اتصال قاعدة البيانات:", err.message);
   }
 };
 
+// استدعاء دالة الاتصال داخل الـ Middleware أو قبل التعريفات
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 // دالة تفقد حساب الأدمن
 const seedAdmin = async () => {
   try {

@@ -10,9 +10,8 @@ import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award } from 'lucide-react';
 
 // تأكد أن الرابط ينتهي بـ /api ليتوافق مع مسارات Express وسيرفر Vercel Serverless Functions
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:5000/api' 
-  : 'https://jkar.vercel.app/api'; // أو استخدام الرابط الديناميكي للتطبيق: `${window.location.origin}/api`
+// هذا السطر يضمن أن يقرأ التطبيق أونلاين أو محلياً مع الحفاظ على اللاحقة الموحدة /api
+const API_URL = `${window.location.origin}/api`;
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
     step: 'login',
