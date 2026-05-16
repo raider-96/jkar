@@ -9,9 +9,10 @@ import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award } from 'lucide-react';
 
-// رابط السيرفر المشترك
-const API_URL = '/api';
-
+// تأكد أن الرابط ينتهي بـ /api ليتوافق مع مسارات Express وسيرفر Vercel Serverless Functions
+const API_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000/api' 
+  : 'https://jkar.vercel.app/api'; // أو استخدام الرابط الديناميكي للتطبيق: `${window.location.origin}/api`
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
     step: 'login',
