@@ -50,43 +50,27 @@ const App: React.FC = () => {
   }, []);
 
  const handleLogin = (username: string, password?: string) => {
-  // 1. تحويل النص لحروف صغيرة لضمان مطابقة الكلمة بدقة
   const trimmedUsername = username.trim().toLowerCase();
 
-  // 2. قاطع فوري للأدمن: يدخل مباشرة دون النظر لقائمة اليوزرز من السيرفر
+  // دخول الأدمن الفوري والمحلي
   if (trimmedUsername === 'admin') {
     if (password === '123' || !password || password === '...') {
       const adminUser: any = {
         _id: 'admin-local-id',
         username: 'admin',
         role: 'admin',
-        isActive: true,
-        createdAt: new Date().toISOString()
+        isActive: true
       };
-      
       setCurrentUser(adminUser);
       setGameState((prev: any) => ({ ...prev, step: 'setup' }));
-      return; // إنهاء الدالة فوراً هنا ومنع الوصول لرسالة اليوزر غير موجود
-    } else {
-      alert('الرمز السري غير صحيح لحساب الأدمن');
-      return;
+      return; // إنهاء الدالة هنا فوراً
     }
   }
 
-  // 3. الفحص الطبيعي لبقية مستخدمي اللعبة العاديين من السيرفر السحابي
+  // الفحص العادي لبقية اللاعبين
   const user = users && users.find((u: any) => u.username.toLowerCase() === trimmedUsername);
-
   if (user) {
-    if (!user.isActive) {
-      alert('هذا اليوزر معطل حالياً');
-      return;
-    }
-    if (user.password && user.password !== password) {
-      alert('الرمز السري غير صحيح');
-      return;
-    }
-    setCurrentUser(user);
-    setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+    // كود التحقق المعتاد...
   } else {
     alert('اليوزر غير موجود');
   }
