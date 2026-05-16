@@ -6,10 +6,6 @@
     {
       "src": "server/server.js",
       "use": "@vercel/node"
-    },
-    {
-      "src": "client/package.json",
-      "use": "@vercel/static-build"
     }
   ],
   "rewrites": [
@@ -19,7 +15,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "client/$1"
+      "destination": "/client/$1"
     }
   ]
 }
