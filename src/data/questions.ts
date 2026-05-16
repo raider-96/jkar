@@ -2,10 +2,10 @@
 import { Question } from '../types';
 
 export const CATEGORIES_CONFIG = [
-  { name: 'مسلسلات عربية', icon: '/img/categories/msar.jpg' },
-  { name: 'مسلسلات خليجية', icon: '/img/categories/msk.jpg' },
-  { name: 'مسلسلات أجنبية', icon: '/img/categories/msag.jpg' },
-  { name: 'مسلسلات أنمي', icon: '/img/categories/msan.jpg' },
+  { name: 'مسلسلات عربية', icon: '/img/categories/mslar.jpg' },
+  { name: 'مسلسلات خليجية', icon: '/img/categories/mslk.jpg' },
+  { name: 'مسلسلات أجنبية', icon: '/img/categories/mslag.jpg' },
+  { name: 'مسلسلات أنمي', icon: '/img/categories/mslan.jpg' },
   { name: 'باب الحارة', icon: '/img/categories/bab.jpg' },
   { name: 'جيم أوف ثرونز', icon: '/img/categories/got.jpg' },
   { name: 'أفلام عربية', icon: '/img/categories/afar.jpg' },
@@ -18,9 +18,9 @@ export const CATEGORIES_CONFIG = [
   { name: 'سيارات', icon: '/img/categories/ .png' },
   { name: 'ألعاب الفيديو', icon: '/img/categories/ .png' },
   { name: 'العراق', icon: '/img/categories/ .png' },
-  { name: 'كرة قدم  ', icon: '/img/categories/ .png' },
-  { name: 'دوري اسباني', icon: '/img/categories/ .png' },
-  { name: 'دوري انكليزي', icon: '/img/categories/ .png' },
+  { name: 'كرة قدم  ', icon: '/img/categories/kra.jpg' },
+  { name: 'دوري اسباني', icon: '/img/categories/keaas.jpg' },
+  { name: 'دوري انكليزي', icon: '/img/categories/kraan.jpg' },
   { name: 'تاريخ', icon: '/img/categories/ .png' },
   { name: 'جغرافية', icon: '/img/categories/ .png' },
   { name: 'عواصم ودول', icon: '/img/categories/ .png' },
