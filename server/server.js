@@ -5,19 +5,17 @@ require('dotenv').config();
 
 const app = express();
 
-// تفعيل حزم الحماية وتمرير البيانات كـ JSON
 app.use(cors());
 app.use(express.json());
 
-// 1. تعديل الهيكل ليكون مرناً (إلغاء قيود الـ enum الصارمة مؤقتاً لتجنب خطأ 400)
+// 1. تعريف الهياكل (Schemas & Models)
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, default: "" },
-  role: { type: String, default: 'user' }, // حذفنا الـ enum ليتوافق مع أي نص يرسله الفرونت إند
+  role: { type: String, default: 'user' },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
-
 
 const QuestionSchema = new mongoose.Schema({
   category: { type: String, required: true },
@@ -30,20 +28,25 @@ const QuestionSchema = new mongoose.Schema({
   options: { type: [String] }
 });
 
-const User = mongoose.model('User', UserSchema);
-const Question = mongoose.model('Question', QuestionSchema);
+// تلافي إعادة تعريف الموديل إذا كان معرفاً مسبقاً في الـ Cache
+const User = mongoose.models.User || mongoose.model('User', UserSchema);
+const Question = mongoose.models.Question || mongoose.model('Question', QuestionSchema);
 
-// 2. الاتصال بقاعدة البيانات السحابية
 const MONGO_URI = 'mongodb+srv://reder:reder1212@cluster0.xnenrtq.mongodb.net/chgar?retryWrites=true&w=majority&appName=Cluster0';
 
-mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!'))
-  .catch(err => console.error('❌ فشل الاتصال بقاعدة البيانات:', err));
+// 2. دالة الاتصال الذكية المتوافقة مع Vercel (تمنع انهيار 500)
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) return;
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log('✅ متصل بـ MongoDB Atlas');
+  } catch (err) {
+    console.error('❌ خطأ اتصال قاعدة البيانات:', err.message);
+  }
+};
 
-// متغير بسيط للتأكد من أن الأدمن يتم فحصه مرة واحدة فقط عند إقلاع السيرفر
-let isAdminSeed되었 = false;
+// دالة تفقد حساب الأدمن
 const seedAdmin = async () => {
-  if (isAdminSeed되었) return;
   try {
     const adminExists = await User.findOne({ username: 'admin' });
     if (!adminExists) {
@@ -53,56 +56,53 @@ const seedAdmin = async () => {
         role: 'admin',
         isActive: true
       });
-      console.log('👤 تم إنشاء حساب الأدمن الافتراضي سحابياً!');
+      console.log('👤 تم إنشاء حساب الأدمن');
     }
-    isAdminSeed되었 = true;
   } catch (err) {
-    console.log('ملاحظة: الأدمن مؤمن محلياً فلا تقلق');
+    console.log('ملاحظة الـ Seed:', err.message);
   }
 };
 
-// ================= 3. مسارات واجهة برمجة التطبيقات (API Routes) =================
+// تفعيل الاتصال في كل مسار لضمان الاستقرار السحابي
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
-// جلب كافة المستخدمين
+// ================= 3. مسارات الـ API =================
+
+// جلب المستخدمين
 app.get('/api/users', async (req, res) => {
   try {
-    await seedAdmin(); // فحص الأدمن احتياطاً عند أول طلب لجلب البيانات
+    await seedAdmin(); // تفقد الأدمن عند الطلب الأول
     const users = await User.find().sort({ createdAt: -1 });
-    res.json(users);
+    res.json(Array.isArray(users) ? users : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-// 2. تعديل مسار الإضافة ليستقبل أي صيغة ويقوم بتنظيفها
+
+// إضافة مستخدم جديد
 app.post('/api/users', async (req, res) => {
   try {
     const { username, password, role } = req.body;
-    
-    if (!username) {
-      return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
-    }
-
-    // تحويل الـ role لنصوص مألوفة احتياطاً
-    let finalRole = 'user';
-    if (role && (role.toLowerCase() === 'admin' || role === 'أدمن')) {
-      finalRole = 'admin';
-    }
+    if (!username) return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
 
     const newUser = new User({ 
       username: username.trim(), 
       password: password || "", 
-      role: finalRole, 
+      role: role || 'user', 
       isActive: true 
     });
 
     await newUser.save();
     res.status(201).json(newUser);
   } catch (err) {
-    console.error("خطأ الإضافة السحابي:", err.message);
-    res.status(400).json({ error: 'اليوزر مسجل بالفعل أو حدثت مشكلة في التحقق' });
+    res.status(400).json({ error: 'اليوزر مسجل بالفعل أو البيانات غير صالحة' });
   }
 });
-// تفعيل / تعطيل حساب مستخدم
+
+// تفعيل / تعطيل مستخدم
 app.patch('/api/users/:username/toggle', async (req, res) => {
   try {
     const user = await User.findOne({ username: req.params.username });
@@ -116,7 +116,7 @@ app.patch('/api/users/:username/toggle', async (req, res) => {
   }
 });
 
-// حذف مستخدم نهائياً
+// حذف مستخدم
 app.delete('/api/users/:username', async (req, res) => {
   try {
     const deletedUser = await User.findOneAndDelete({ username: req.params.username });
@@ -127,17 +127,17 @@ app.delete('/api/users/:username', async (req, res) => {
   }
 });
 
-// جلب جميع الأسئلة المتاحة للعبة
+// جلب الأسئلة
 app.get('/api/questions', async (req, res) => {
   try {
     const questions = await Question.find();
-    res.json(questions);
+    res.json(Array.isArray(questions) ? questions : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// إضافة سؤال جديد من شاشة الأدمن
+// إضافة سؤال جديد
 app.post('/api/questions', async (req, res) => {
   try {
     const newQuestion = new Question(req.body);
@@ -148,13 +148,10 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
-// 4. تشغيل السيرفر وتصديره لـ Vercel
+// 4. تشغيل وتصدير السيرفر
 const PORT = process.env.PORT || 5000;
-
 if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`🚀 السيرفر يعمل بكفاءة على المنفذ: http://localhost:${PORT}`);
-  });
+  app.listen(PORT, () => console.log(`🚀 localhost:${PORT}`));
 }
 
 module.exports = app;
