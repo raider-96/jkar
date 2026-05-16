@@ -34,7 +34,7 @@ const App: React.FC = () => {
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
-  // 1. جلب المستخدمين والأسئلة من السيرفر مع حماية المصفوفات من الانهيار (مهم جداً للـ Serverless)
+ // 1. جلب المستخدمين والأسئلة مرة واحدة فقط عند إقلاع التطبيق لمنع التكرار والانهيار
   useEffect(() => {
     // جلب المستخدمين
     fetch(`${API_URL}/users`)
@@ -43,7 +43,7 @@ const App: React.FC = () => {
         if (Array.isArray(data)) {
           setUsers(data);
         } else {
-          setUsers([]); // إرجاع مصفوفة فارغة بدلاً من تدمير الواجهة إذا رجع خطأ 500 أو 400
+          setUsers([]); 
         }
       })
       .catch(err => {
@@ -51,12 +51,14 @@ const App: React.FC = () => {
         setUsers([]);
       });
 
-    // جلب كافة الأسئلة (الأساسية والمضافة)
+    // جلب كافة الأسئلة مع التطهير الفوري للحقول
     fetch(`${API_URL}/questions`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setAllQuestions(data);
+          // حماية إضافية للتأكد أن كل سؤال يحتوي على تصنيف نصي سليم لمنع خطأ startsWith
+          const safeQuestions = data.filter(q => q && q.category && typeof q.category === 'string');
+          setAllQuestions(safeQuestions);
         } else {
           setAllQuestions([]);
         }
@@ -65,8 +67,7 @@ const App: React.FC = () => {
         console.error("خطأ في جلب الأسئلة:", err);
         setAllQuestions([]);
       });
-  }, [gameState.step]); // إعادة التحديث تلقائياً عند الانتقال بين الصفحات
-
+  }, []); // 👈 قمنا بجعل المصفوفة فارغة تماماً لتعمل مرة واحدة فقط وتمنع أي Infinite Loop
   const handleLogin = (username: string, password?: string) => {
     const trimmedUsername = username.trim().toLowerCase();
 
