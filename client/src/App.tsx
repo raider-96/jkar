@@ -9,9 +9,9 @@ import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award } from 'lucide-react';
 
-
 // رابط السيرفر المشترك
 const API_URL = '/api';
+
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
     step: 'login',
@@ -34,47 +34,72 @@ const App: React.FC = () => {
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
-  // 1. جلب المستخدمين والأسئلة من السيرفر فور تشغيل اللعبة
+  // 1. جلب المستخدمين والأسئلة من السيرفر مع حماية المصفوفات من الانهيار (مهم جداً للـ Serverless)
   useEffect(() => {
     // جلب المستخدمين
     fetch(`${API_URL}/users`)
       .then(res => res.json())
-      .then(data => setUsers(data))
-      .catch(err => console.error("خطأ في جلب المستخدمين:", err));
+      .then(data => {
+        if (Array.isArray(data)) {
+          setUsers(data);
+        } else {
+          setUsers([]); // إرجاع مصفوفة فارغة بدلاً من تدمير الواجهة إذا رجع خطأ 500 أو 400
+        }
+      })
+      .catch(err => {
+        console.error("خطأ في جلب المستخدمين:", err);
+        setUsers([]);
+      });
 
     // جلب كافة الأسئلة (الأساسية والمضافة)
     fetch(`${API_URL}/questions`)
       .then(res => res.json())
-      .then(data => setAllQuestions(data))
-      .catch(err => console.error("خطأ في جلب الأسئلة:", err));
-  }, []);
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllQuestions(data);
+        } else {
+          setAllQuestions([]);
+        }
+      })
+      .catch(err => {
+        console.error("خطأ في جلب الأسئلة:", err);
+        setAllQuestions([]);
+      });
+  }, [gameState.step]); // إعادة التحديث تلقائياً عند الانتقال بين الصفحات
 
- const handleLogin = (username: string, password?: string) => {
-  const trimmedUsername = username.trim().toLowerCase();
+  const handleLogin = (username: string, password?: string) => {
+    const trimmedUsername = username.trim().toLowerCase();
 
-  // دخول الأدمن الفوري والمحلي
-  if (trimmedUsername === 'admin') {
-    if (password === '123' || !password || password === '...') {
-      const adminUser: any = {
-        _id: 'admin-local-id',
-        username: 'admin',
-        role: 'admin',
-        isActive: true
-      };
-      setCurrentUser(adminUser);
-      setGameState((prev: any) => ({ ...prev, step: 'setup' }));
-      return; // إنهاء الدالة هنا فوراً
+    // دخول الأدمن الفوري والمحلي (تأمين كامل بدون طلب سيرفر)
+    if (trimmedUsername === 'admin') {
+      if (password === '123' || !password || password === '...') {
+        const adminUser: any = {
+          _id: 'admin-local-id',
+          username: 'admin',
+          role: 'admin',
+          isActive: true
+        };
+        setCurrentUser(adminUser);
+        setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+        return; 
+      }
     }
-  }
 
-  // الفحص العادي لبقية اللاعبين
-  const user = users && users.find((u: any) => u.username.toLowerCase() === trimmedUsername);
-  if (user) {
-    // كود التحقق المعتاد...
-  } else {
-    alert('اليوزر غير موجود');
-  }
-};
+    // الفحص الآمن لبقية اللاعبين للتأكد من أن المصفوفة جاهزة
+    const safeUsers = Array.isArray(users) ? users : [];
+    const user = safeUsers.find((u: any) => u.username.toLowerCase() === trimmedUsername);
+    
+    if (user) {
+      if (!user.isActive) {
+        alert('هذا الحساب معطل حالياً من قِبل المشرف');
+        return;
+      }
+      setCurrentUser(user);
+      setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+    } else {
+      alert('اسم المستخدم غير موجود، يرجى مراجعة الأدمن لتسجيلك!');
+    }
+  };
 
   // 2. إرسال المستخدم الجديد إلى قاعدة البيانات عبر السيرفر
   const handleAddUser = async (username: string, password?: string) => {
@@ -87,10 +112,10 @@ const App: React.FC = () => {
 
       if (response.ok) {
         const newUser = await response.json();
-        setUsers(prev => [...prev, newUser]);
+        setUsers(prev => [...(Array.isArray(prev) ? prev : []), newUser]);
       } else {
         const errData = await response.json();
-        alert(errData.error);
+        alert(errData.error || 'فشلت عملية الإضافة');
       }
     } catch (err) {
       console.error("خطأ أثناء إضافة المستخدم:", err);
@@ -106,7 +131,7 @@ const App: React.FC = () => {
 
       if (response.ok) {
         const updatedUser = await response.json();
-        setUsers(prev => prev.map(u => u.username === username ? updatedUser : u));
+        setUsers(prev => (Array.isArray(prev) ? prev : []).map(u => u.username === username ? updatedUser : u));
       }
     } catch (err) {
       console.error("خطأ أثناء تعديل حالة الحساب:", err);
@@ -121,7 +146,7 @@ const App: React.FC = () => {
       });
 
       if (response.ok) {
-        setUsers(prev => prev.filter(u => u.username !== username));
+        setUsers(prev => (Array.isArray(prev) ? prev : []).filter(u => u.username !== username));
       }
     } catch (err) {
       console.error("خطأ أثناء حذف المستخدم:", err);
@@ -139,7 +164,7 @@ const App: React.FC = () => {
 
       if (response.ok) {
         const newQuestion = await response.json();
-        setAllQuestions(prev => [...prev, newQuestion]);
+        setAllQuestions(prev => [...(Array.isArray(prev) ? prev : []), newQuestion]);
       }
     } catch (err) {
       console.error("خطأ في إضافة السؤال للسيرفر:", err);
@@ -147,8 +172,8 @@ const App: React.FC = () => {
   };
 
   const handleDeleteQuestion = (id: string) => {
-    // يمكنك تطبيق مسار DELETE في السيرفر بنفس النمط إذا كنت تحذف أسئلة من قاعدة البيانات
-    const updated = allQuestions.filter(q => q.id !== id);
+    const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
+    const updated = safeQuestions.filter(q => q.id !== id);
     setAllQuestions(updated);
   };
 
@@ -166,7 +191,9 @@ const App: React.FC = () => {
   };
 
   const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
-    const available = allQuestions.filter(q => 
+    const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
+    
+    const available = safeQuestions.filter(q => 
       q.category === category && 
       q.difficulty === difficulty && 
       !permanentlyUsedIds.includes(q.id)
@@ -174,7 +201,11 @@ const App: React.FC = () => {
 
     let chosenQuestion: Question;
     if (available.length === 0) {
-      const resetAvailable = allQuestions.filter(q => q.category === category && q.difficulty === difficulty);
+      const resetAvailable = safeQuestions.filter(q => q.category === category && q.difficulty === difficulty);
+      if (resetAvailable.length === 0) {
+        alert("لا توجد أسئلة متوفرة في هذا القسم حالياً!");
+        return;
+      }
       chosenQuestion = resetAvailable[Math.floor(Math.random() * resetAvailable.length)];
     } else {
       chosenQuestion = available[Math.floor(Math.random() * available.length)];
@@ -212,8 +243,8 @@ const App: React.FC = () => {
     }
 
     const newAnswered = [...gameState.answeredQuestionIds, activeQuestion.key];
-    const newPermanentUsed = [...permanentlyUsedIds, activeQuestion.question.id];
-    
+    const questionId = activeQuestion.question.id || (activeQuestion.question as any)._id || (activeQuestion.question as any)["_id"];
+    const newPermanentUsed = [...permanentlyUsedIds, questionId];    
     setPermanentlyUsedIds(newPermanentUsed);
 
     const nextTurn = gameState.currentTurn === 0 ? 1 : 0;
@@ -286,11 +317,11 @@ const App: React.FC = () => {
         
         {gameState.step === 'admin' && (
           <AdminPanel 
-            users={users} 
+            users={Array.isArray(users) ? users : []} 
             onAddUser={handleAddUser} 
             onDeleteUser={handleDeleteUser}
             onToggleUser={handleToggleUser} 
-            questions={allQuestions}
+            questions={Array.isArray(allQuestions) ? allQuestions : []}
             onAddQuestion={handleAddQuestion}
             onDeleteQuestion={handleDeleteQuestion}
             onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} 
@@ -316,7 +347,7 @@ const App: React.FC = () => {
               gameState={gameState} 
               onSelectQuestion={handleSelectQuestion}
               permanentlyUsedIds={permanentlyUsedIds}
-              questions={allQuestions}
+              questions={Array.isArray(allQuestions) ? allQuestions : []}
             />
           </div>
         )}
