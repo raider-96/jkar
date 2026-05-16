@@ -9,9 +9,9 @@ import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award } from 'lucide-react';
 
-// رابط السيرفر المشترك
-const API_URL = 'http://localhost:5000/api';
 
+// رابط السيرفر المشترك
+const API_URL = '/api';
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
     step: 'login',
