@@ -9,14 +9,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. تعريف الهياكل (Schemas & Models)
+// 1. تعديل الهيكل ليكون مرناً (إلغاء قيود الـ enum الصارمة مؤقتاً لتجنب خطأ 400)
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, default: "" },
-  role: { type: String, enum: ['admin', 'user'], default: 'user' },
+  role: { type: String, default: 'user' }, // حذفنا الـ enum ليتوافق مع أي نص يرسله الفرونت إند
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
+
 
 const QuestionSchema = new mongoose.Schema({
   category: { type: String, required: true },
@@ -72,31 +73,35 @@ app.get('/api/users', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// إضافة مستخدم جديد (تم تصليح استقبال البيانات وحفظ الباسورد هنا)
+// 2. تعديل مسار الإضافة ليستقبل أي صيغة ويقوم بتنظيفها
 app.post('/api/users', async (req, res) => {
   try {
     const { username, password, role } = req.body;
     
-    // التأكد من إرسال اسم المستخدم
     if (!username) {
       return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+    }
+
+    // تحويل الـ role لنصوص مألوفة احتياطاً
+    let finalRole = 'user';
+    if (role && (role.toLowerCase() === 'admin' || role === 'أدمن')) {
+      finalRole = 'admin';
     }
 
     const newUser = new User({ 
       username: username.trim(), 
       password: password || "", 
-      role: role || 'user', 
+      role: finalRole, 
       isActive: true 
     });
 
     await newUser.save();
     res.status(201).json(newUser);
   } catch (err) {
-    res.status(400).json({ error: 'اليوزر مسجل بالفعل أو البيانات غير صالحة' });
+    console.error("خطأ الإضافة السحابي:", err.message);
+    res.status(400).json({ error: 'اليوزر مسجل بالفعل أو حدثت مشكلة في التحقق' });
   }
 });
-
 // تفعيل / تعطيل حساب مستخدم
 app.patch('/api/users/:username/toggle', async (req, res) => {
   try {
