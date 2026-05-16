@@ -5,8 +5,10 @@ require('dotenv').config();
 
 const app = express();
 
+// الأسطر السحرية لترجمة البيانات القادمة من الفرونت إند
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-app.use(express.json());
 
 // 1. تعريف الهياكل (Schemas & Models)
 const UserSchema = new mongoose.Schema({

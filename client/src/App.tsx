@@ -101,26 +101,31 @@ const App: React.FC = () => {
     }
   };
 
-  // 2. إرسال المستخدم الجديد إلى قاعدة البيانات عبر السيرفر
-  const handleAddUser = async (username: string, password?: string) => {
-    try {
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, role: 'user' })
-      });
+const handleAddUser = async (username: string, password?: string) => {
+  try {
+    const response = await fetch(`${API_URL}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        username: username.trim(), 
+        password: password || "123", // تعيين رمز افتراضي إذا تركه فارغاً
+        role: 'user',
+        isActive: true // تأكد من إرسال حالة الحساب لتجنب رفض السيرفر لها
+      })
+    });
 
-      if (response.ok) {
-        const newUser = await response.json();
-        setUsers(prev => [...(Array.isArray(prev) ? prev : []), newUser]);
-      } else {
-        const errData = await response.json();
-        alert(errData.error || 'فشلت عملية الإضافة');
-      }
-    } catch (err) {
-      console.error("خطأ أثناء إضافة المستخدم:", err);
+    if (response.ok) {
+      const newUser = await response.json();
+      setUsers(prev => [...prev, newUser]);
+      alert('تم إضافة المستخدم بنجاح!');
+    } else {
+      const errData = await response.json();
+      alert(errData.error || 'فشل السيرفر في إضافة المستخدم');
     }
-  };
+  } catch (err) {
+    console.error("خطأ أثناء إضافة المستخدم:", err);
+  }
+};
 
   // 3. تعديل حالة الحساب من السيرفر (تفعيل/تعطيل)
   const handleToggleUser = async (username: string) => {
@@ -154,22 +159,37 @@ const App: React.FC = () => {
   };
 
   // 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات السحابية
-  const handleAddQuestion = async (q: Question) => {
-    try {
-      const response = await fetch(`${API_URL}/questions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(q)
-      });
+const handleAddQuestion = async (q: Question) => {
+  try {
+    // بناء الكائن بشكل صريح ليتطابق مع الـ Schema بالسيرفر
+    const questionData = {
+      id: q.id || Date.now().toString(),
+      question: q.question,
+      options: q.options || [],
+      answer: q.answer,
+      category: q.category,
+      difficulty: q.difficulty,
+      points: Number(q.points) || 10 // تحويل النقاط لرقم للتأكد من توافق البيانات
+    };
 
-      if (response.ok) {
-        const newQuestion = await response.json();
-        setAllQuestions(prev => [...(Array.isArray(prev) ? prev : []), newQuestion]);
-      }
-    } catch (err) {
-      console.error("خطأ في إضافة السؤال للسيرفر:", err);
+    const response = await fetch(`${API_URL}/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(questionData)
+    });
+
+    if (response.ok) {
+      const newQuestion = await response.json();
+      setAllQuestions(prev => [...prev, newQuestion]);
+      alert('تم إضافة السؤال بنجاح إلى قاعدة البيانات!');
+    } else {
+      const errData = await response.json();
+      alert(errData.error || 'فشلت إضافة السؤال، راجع الحقول المطلوبة');
     }
-  };
+  } catch (err) {
+    console.error("خطأ في إضافة السؤال للسيرفر:", err);
+  }
+};
 
   const handleDeleteQuestion = (id: string) => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
