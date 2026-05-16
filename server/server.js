@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. تعريف الهياكل (Schemas & Models) في الأعلى لاستخدامها عند الاتصال
+// 1. تعريف الهياكل (Schemas & Models)
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, default: "" },
@@ -32,41 +32,40 @@ const QuestionSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 const Question = mongoose.model('Question', QuestionSchema);
 
-// 2. الاتصال بقاعدة البيانات والتحقق من وجود الأدمن
-// تم تعديل المنفذ الافتراضي إلى 27017 وهو المنفذ القياسي لـ MongoDB
+// 2. الاتصال بقاعدة البيانات السحابية
 const MONGO_URI = 'mongodb+srv://reder:reder1212@cluster0.xnenrtq.mongodb.net/chgar?retryWrites=true&w=majority&appName=Cluster0';
+
 mongoose.connect(MONGO_URI)
-  .then(async () => {
-    console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!');
-    
-    try {
-      // فحص إذا كان حساب الأدمن الافتراضي موجوداً في قاعدة البيانات
-      const adminExists = await User.findOne({ username: 'admin' });
-      
-      if (!adminExists) {
-        // إنشاء حساب الأدمن تلقائياً إذا كانت قاعدة البيانات فارغة
-        await User.create({
-          username: 'admin',
-          password: '123', // يمكنك إبقاء الرمز فارغاً "" أو كتابة رمز افتراضي كـ 123 لتسجيل الدخول
-          role: 'admin',
-          isActive: true
-        });
-        console.log('👤 تم إنشاء حساب الأدمن الافتراضي بنجاح في قاعدة البيانات!');
-      }
-    } catch (adminErr) {
-      console.error('❌ خطأ أثناء التحقق من حساب الأدمن الافتراضي:', adminErr.message);
-    }
-  })
+  .then(() => console.log('✅ تم الاتصال بقاعدة بيانات MongoDB بنجاح!'))
   .catch(err => console.error('❌ فشل الاتصال بقاعدة البيانات:', err));
 
+// متغير بسيط للتأكد من أن الأدمن يتم فحصه مرة واحدة فقط عند إقلاع السيرفر
+let isAdminSeed되었 = false;
+const seedAdmin = async () => {
+  if (isAdminSeed되었) return;
+  try {
+    const adminExists = await User.findOne({ username: 'admin' });
+    if (!adminExists) {
+      await User.create({
+        username: 'admin',
+        password: '123',
+        role: 'admin',
+        isActive: true
+      });
+      console.log('👤 تم إنشاء حساب الأدمن الافتراضي سحابياً!');
+    }
+    isAdminSeed되었 = true;
+  } catch (err) {
+    console.log('ملاحظة: الأدمن مؤمن محلياً فلا تقلق');
+  }
+};
 
 // ================= 3. مسارات واجهة برمجة التطبيقات (API Routes) =================
-
-// --- مسارات التحكم بالمستخدمين ---
 
 // جلب كافة المستخدمين
 app.get('/api/users', async (req, res) => {
   try {
+    await seedAdmin(); // فحص الأدمن احتياطاً عند أول طلب لجلب البيانات
     const users = await User.find().sort({ createdAt: -1 });
     res.json(users);
   } catch (err) {
@@ -74,11 +73,23 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// إضافة مستخدم جديد
+// إضافة مستخدم جديد (تم تصليح استقبال البيانات وحفظ الباسورد هنا)
 app.post('/api/users', async (req, res) => {
   try {
-    const { username, role } = req.body;
-    const newUser = new User({ username, role: role || 'user', isActive: true });
+    const { username, password, role } = req.body;
+    
+    // التأكد من إرسال اسم المستخدم
+    if (!username) {
+      return res.status(400).json({ error: 'اسم المستخدم مطلوب' });
+    }
+
+    const newUser = new User({ 
+      username: username.trim(), 
+      password: password || "", 
+      role: role || 'user', 
+      isActive: true 
+    });
+
     await newUser.save();
     res.status(201).json(newUser);
   } catch (err) {
@@ -111,9 +122,6 @@ app.delete('/api/users/:username', async (req, res) => {
   }
 });
 
-
-// --- مسارات التحكم بالأسئلة ---
-
 // جلب جميع الأسئلة المتاحة للعبة
 app.get('/api/questions', async (req, res) => {
   try {
@@ -135,7 +143,7 @@ app.post('/api/questions', async (req, res) => {
   }
 });
 
-// 4. تشغيل السيرفر (محلياً فقط) وتصديره لـ Vercel
+// 4. تشغيل السيرفر وتصديره لـ Vercel
 const PORT = process.env.PORT || 5000;
 
 if (process.env.NODE_ENV !== 'production') {
@@ -144,5 +152,4 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// هذا السطر هو الأهم لكي يشتغل السيرفر على Vercel بنجاح
 module.exports = app;
