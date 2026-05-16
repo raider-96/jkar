@@ -20,5 +20,8 @@
       "src": "/(.*)",
       "dest": "client/$1"
     }
-  ]
+  ],
+  "env": {
+    "MONGO_URI": "@mongo_uri"
+  }
 }
