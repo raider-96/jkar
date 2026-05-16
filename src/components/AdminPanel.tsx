@@ -189,14 +189,41 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">رابط الصورة (اختياري)</label>
-                  <input
-                    type="text"
-                    value={newQ.image || ''}
-                    onChange={(e) => setNewQ({...newQ, image: e.target.value})}
-                    className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]"
-                    placeholder="رابط الصورة المباشر"
-                  />
+                  <label className="text-sm font-black mr-2">رفع صورة من الجهاز (اختياري)</label>
+                  <div className="flex flex-col gap-3">
+                    <label className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705]/40 font-black cursor-pointer hover:border-[#F7C705] transition-all flex items-center justify-center gap-3">
+                      <PlusCircle size={20} />
+                      {newQ.image ? 'تم اختيار صورة' : 'اختر صورة من جهازك'}
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (readerEvent) => {
+                              const base64 = readerEvent.target?.result as string;
+                              setNewQ({...newQ, image: base64});
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                    {newQ.image && (
+                      <div className="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-[#F7C705]">
+                        <img src={newQ.image} className="w-full h-full object-cover" alt="Preview" />
+                        <button 
+                          type="button"
+                          onClick={() => setNewQ({...newQ, image: ''})}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">
