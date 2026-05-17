@@ -159,8 +159,7 @@ const handleAddUser = async (username: string, password?: string) => {
     }
   };
 
-// 5. إضافة الأسئلة الإضافية إلى قاعدة البيانات مع حماية كاملة ومنع إفراغ الحقول إلا بعد النجاح
- const handleAddQuestion = async (q: Question) => {
+const handleAddQuestion = async (q: Question) => {
     try {
       const generatedId = `custom-${Date.now()}`;
 
@@ -183,11 +182,10 @@ const handleAddUser = async (username: string, password?: string) => {
       const resData = await response.json();
 
       if (response.ok) {
-        // تنبيه واحد فقط لا غير عند نجاح الإضافة
         setAllQuestions(prev => [...prev, resData]);
-        alert('🎉 تم إضافة السؤال بنجاح!');
+        // 👈 قمنا بإلغاء الـ alert من هنا لمنع التكرار المزدوج مع AdminPanel
       } else {
-        alert(`❌ فشل السيرفر في التخزين: ${resData.error || resData.message || 'تأكد من الحقول'}`);
+        alert(`❌ فشل السيرفر في التخزين: ${resData.error || resData.message}`);
       }
     } catch (err) {
       console.error("خطأ في إضافة السؤال للسيرفر:", err);

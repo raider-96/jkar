@@ -269,7 +269,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <p className="text-black font-black">{q.question}</p>
                   </div>
                   <button
-                    onClick={() => onDeleteQuestion(q.id)}
+                   onClick={() => onDeleteQuestion((q as any).id || (q as any)._id || q['_id'])}
                     className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4"
                   >
                     <Trash2 size={24} />
