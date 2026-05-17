@@ -98,7 +98,7 @@ const App: React.FC = () => {
   const handleLogin = (username: string, password?: string) => {
     const trimmedUsername = username.trim().toLowerCase();
 
-    // دخول الأدمن الفوري والمحلي الآمن
+    // دخول الأدمن الفوري والمحلي الآمن////////////////////////////////////////////////////////////////////////////////////////////////////////
     if (trimmedUsername === 'admin') {
       if (password === '123' || !password || password === '...') {
         const adminUser: any = {
@@ -119,14 +119,14 @@ const App: React.FC = () => {
     
     if (user) {
       if (!user.isActive) {
-        showToast('🔒 هذا الحساب معطل حالياً من قِبل المشرف!', 'error');
+        showToast('🔒 هذا الحساب معطل حالياً من قِبل المشرف', 'error');
         return;
       }
       setCurrentUser(user);
       setGameState((prev: any) => ({ ...prev, step: 'setup' }));
       showToast(`👋 أهلاً بك مجدداً ${user.username}!`, 'success');
     } else {
-      showToast('❌ اسم المستخدم غير موجود، يرجى مراجعة الأدمن لتسجيلك!', 'error');
+      showToast('❌ اسم المستخدم غير موجود، يرجى مراجعة الأدمن لتسجيلك', 'error');
     }
   };
 
@@ -146,7 +146,7 @@ const App: React.FC = () => {
       if (response.ok) {
         const newUser = await response.json();
         setUsers(prev => [...prev, newUser]);
-        showToast('👤 تم إضافة المستخدم بنجاح وتخزينه سحابياً!', 'success');
+        showToast('👤 تم إضافة المستخدم بنجاح وتخزينه سحابياً', 'success');
       } else {
         const errData = await response.json();
         showToast(errData.error || 'فشل السيرفر في إضافة المستخدم', 'error');
@@ -212,7 +212,7 @@ const App: React.FC = () => {
 
       if (response.ok) {
         setAllQuestions(prev => [...prev, resData]);
-        showToast('🧠 تم إضافة السؤال الجديد وحفظه في السيرفر بنجاح!', 'success');
+        showToast('🧠 تم إضافة السؤال الجديد وحفظه في السيرفر بنجاح', 'success');
       } else {
         showToast(`❌ فشل السيرفر في التخزين: ${resData.error || resData.message}`, 'error');
       }
@@ -222,16 +222,31 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDeleteQuestion = async (id: string) => {
-    const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    const updated = safeQuestions.filter((q: any) => {
-      const qId = q.id || q._id || q['_id'];
-      return qId !== id;
-    });
-    setAllQuestions(updated);
-    showToast('🗑️ تم حذف السؤال المحدّد من القائمة الحالية بنجاح.', 'info');
-  };
+const handleDeleteQuestion = async (id: string) => {
+    try {
+      // إرسال طلب الحذف الفعلي إلى قاعدة البيانات السحابية عبر السيرفر
+      const response = await fetch(`${API_URL}/questions/${id}`, {
+        method: 'DELETE',
+      });
 
+      if (response.ok) {
+        // إذا نجح الحذف من السيرفر، نقوم بتحديث الواجهة فوراً
+        const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
+        const updated = safeQuestions.filter((q: any) => {
+          const qId = q.id || q._id || q['_id'];
+          return qId !== id;
+        });
+        setAllQuestions(updated);
+        showToast('🗑️ تم حذف السؤال نهائياً من قاعدة البيانات!', 'info');
+      } else {
+        const resData = await response.json();
+        showToast(`❌ فشل السيرفر في حذف السؤال: ${resData.error || resData.message}`, 'error');
+      }
+    } catch (err) {
+      console.error("خطأ أثناء حذف السؤال من السيرفر:", err);
+      showToast('❌ حدث خطأ في الاتصال بالسيرفر أثناء محاولة الحذف', 'error');
+    }
+  };
   const handleStartGame = (t1: string, t2: string, cats: string[]) => {
     setGameState({
       ...gameState,
@@ -243,7 +258,7 @@ const App: React.FC = () => {
       selectedCategories: cats,
       answeredQuestionIds: [],
     });
-    showToast('🚀 انطلق التحدي الجبار! بالتوفيق للفريقين.', 'info');
+    showToast('🚀 انطلق التحدي بالتوفيق للفريقين.', 'info');
   };
 
   const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
@@ -259,7 +274,7 @@ const App: React.FC = () => {
     if (available.length === 0) {
       const resetAvailable = safeQuestions.filter(q => q.category === category && q.difficulty === difficulty);
       if (resetAvailable.length === 0) {
-        showToast('⚠️ لا توجد أسئلة متوفرة في هذا القسم حالياً!', 'error');
+        showToast('⚠️ لا توجد أسئلة متوفرة في هذا القسم حالياً', 'error');
         return;
       }
       chosenQuestion = resetAvailable[Math.floor(Math.random() * resetAvailable.length)];
@@ -328,7 +343,7 @@ const App: React.FC = () => {
       step: 'setup',
       answeredQuestionIds: [],
     }));
-    showToast('🔄 تم إعداد طاولة التحدي لبدء مباراة جديدة!', 'info');
+    showToast('🔄 تم إعداد طاولة التحدي لبدء المباراة ', 'info');
   };
 
   const handleLogout = () => {
@@ -419,7 +434,7 @@ const App: React.FC = () => {
         {gameState.step === 'result' && (
           <div className="max-w-2xl mx-auto mt-20 p-10 bg-slate-900 rounded-3xl border-2 border-indigo-500/50 shadow-2xl text-center rtl text-white">
             <Award size={80} className="mx-auto text-yellow-400 mb-6" />
-            <h2 className="text-4xl font-black mb-2">انتهت اللعبة!</h2>
+            <h2 className="text-4xl font-black mb-2">انتهت اللعبة</h2>
             <p className="text-slate-400 mb-8">النتائج النهائية للتحدي</p>
             
             <div className="flex justify-between items-center mb-12">
@@ -438,7 +453,7 @@ const App: React.FC = () => {
               <h4 className="text-xl font-bold mb-2">
                 الفائز: {gameState.teams[0].score > gameState.teams[1].score ? gameState.teams[0].name : gameState.teams[1].name}
               </h4>
-              <p className="text-indigo-300">أداء رائع ومنافسة قوية!</p>
+              <p className="text-indigo-300">أداء رائع ومنافسة قوية</p>
             </div>
 
             <button

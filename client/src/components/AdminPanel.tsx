@@ -50,7 +50,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       };
       onAddQuestion(q);
       setNewQ({ ...newQ, question: '', answer: '', image: '' });
-      alert('تمت إضافة التحدي بنجاح!');
     }
   };
 
