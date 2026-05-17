@@ -1,23 +1,64 @@
 
 import React, { useState } from 'react';
-import { CATEGORIES_CONFIG, QUESTIONS } from '../data/questions';
+import { CATEGORIES_CONFIG} from '../data/questions';
 import { motion } from 'framer-motion';
-import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles } from 'lucide-react';
-import { HelpType, Question } from '../types';
+import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles ,Clock, Phone,Bomb,Shuffle,Ghost,} from 'lucide-react';
+
 
 interface SetupProps {
   onStart: (team1: string, team2: string, selectedCats: string[], t1Helps: HelpType[], t2Helps: HelpType[]) => void;
   isAdmin: boolean;
   onOpenAdmin: () => void;
-  allQuestions: Question[];
+  allQuestions: any[];
 }
 
-const HELPS_CONFIG: { type: HelpType; name: string; desc: string }[] = [
-  { type: 'think', name: 'خل أفكر', desc: 'تعطي الفريق 60 ثانية للإجابة' },
-  { type: 'phone', name: 'أريد أخبار', desc: 'إيقاف الوقت، ثم استئنافه بـ 40 ثانية' },
-  { type: 'destruction', name: 'تفليش', desc: 'إذا جاوبتم صح، الخصم ينقص نقاط السؤال' },
-  { type: 'change', name: 'شوفلي غيرة', desc: 'تبديل السؤال بنفس المستوى وتجديد الوقت' },
-  { type: 'thief', name: 'حرامي', desc: 'سرقة سؤال الخصم القادم' },
+// 1. تعريف الألوان والرموز القوية لوسائل المساعدة
+const HELP_STYLES = {
+  think: {
+    icon: Clock,
+    name: 'خل أفكر',
+    desc: 'تعطي الفريق 60 ثانية للإجابة',
+    color: 'bg-yellow-400 border-yellow-500 text-black', // أصفر ساطع
+    selected: 'ring-4 ring-yellow-200'
+  },
+  phone: {
+    icon: Phone,
+    name: 'أريد أخبار',
+    desc: 'إيقاف الوقت، ثم استئنافه بـ 40 ثانية',
+    color: 'bg-orange-500 border-orange-600 text-white', // برتقالي قوي
+    selected: 'ring-4 ring-orange-300'
+  },
+  destruction: {
+    icon: Bomb,
+    name: 'تفليش',
+    desc: 'إذا جاوبتم صح، الخصم ينقص نقاط السؤال',
+    color: 'bg-red-600 border-red-700 text-white', // أحمر صارخ
+    selected: 'ring-4 ring-red-300'
+  },
+  change: {
+    icon: Shuffle,
+    name: 'شوفلي غيرة',
+    desc: 'تبديل السؤال بنفس المستوى وتجديد الوقت',
+    color: 'bg-blue-500 border-blue-600 text-white', // أزرق صريح
+    selected: 'ring-4 ring-blue-200'
+  },
+  thief: {
+    icon: Ghost,
+    name: 'حرامي',
+    desc: 'سرقة سؤال الخصم القادم',
+    color: 'bg-green-500 border-green-600 text-white', // أخضر حيوي
+    selected: 'ring-4 ring-green-200'
+  }
+} as const;
+
+type HelpType = keyof typeof HELP_STYLES;
+
+const HELPS_LIST: { type: HelpType }[] = [
+  { type: 'think' },
+  { type: 'phone' },
+  { type: 'destruction' },
+  { type: 'change' },
+  { type: 'thief' }
 ];
 
 const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestions }) => {
@@ -115,18 +156,30 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
             <h3 className="text-sm font-black text-black/40 uppercase tracking-widest flex items-center gap-2">
               <Sparkles size={16} /> اختر 3 وسائل مساعدة
             </h3>
-            <div className="grid grid-cols-1 gap-2">
-              {HELPS_CONFIG.map(help => (
-                <button
-                  key={help.type}
-                  onClick={() => toggleHelp(1, help.type)}
-                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team1Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
-                >
-                  <div className="text-sm">{help.name}</div>
-                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
-                </button>
-              ))}
-            </div>
+  <div className="grid grid-cols-1 gap-2">
+  {HELPS_LIST.map(({ type }) => {
+    const style = HELP_STYLES[type];
+    const Icon = style.icon;
+    const isSelected = team1Helps.includes(type); // للفريق الثاني غيريها إلى team2Helps
+    const isMaxed = team1Helps.length >= 3 && !isSelected; // للفريق الثاني غيريها إلى team2Helps
+    return (
+      <button
+        key={type}
+        type="button"
+        onClick={() => toggleHelp(1, type)} // للفريق الثاني غيّري الرقم إلى 2
+        disabled={isMaxed}
+        className={`flex items-center gap-3 p-4 h-20 rounded-2xl border-4 text-right transition-all font-black shadow-lg disabled:opacity-30 disabled:cursor-not-allowed ${isSelected ? `${style.color} ${style.selected}` : 'bg-white/70 border-black/10 text-black'}`}
+      >
+        <Icon size={24} className={isSelected ? '' : 'text-black/40'} />
+        <div>
+          <div className="text-base leading-tight">{style.name}</div>
+          <div className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-black/50'}`}>{style.desc}</div>
+        </div>
+        {isSelected && <CheckCircle2 size={20} className="mr-auto" />}
+      </button>
+    );
+  })}
+</div>
           </div>
         </div>
 
@@ -148,17 +201,29 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
               <Sparkles size={16} /> اختر 3 وسائل مساعدة
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {HELPS_CONFIG.map(help => (
-                <button
-                  key={help.type}
-                  onClick={() => toggleHelp(2, help.type)}
-                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team2Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
-                >
-                  <div className="text-sm">{help.name}</div>
-                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
-                </button>
-              ))}
-            </div>
+  {HELPS_LIST.map(({ type }) => {
+    const style = HELP_STYLES[type];
+    const Icon = style.icon;
+    const isSelected = team2Helps.includes(type); // للفريق الثاني غيريها إلى team2Helps
+    const isMaxed = team2Helps.length >= 3 && !isSelected; // للفريق الثاني غيريها إلى team2Helps
+    return (
+      <button
+        key={type}
+        type="button"
+        onClick={() => toggleHelp(2, type)} // للفريق الثاني غيّري الرقم إلى 2
+        disabled={isMaxed}
+        className={`flex items-center gap-3 p-4 h-20 rounded-2xl border-4 text-right transition-all font-black shadow-lg disabled:opacity-30 disabled:cursor-not-allowed ${isSelected ? `${style.color} ${style.selected}` : 'bg-white/70 border-black/10 text-black'}`}
+      >
+        <Icon size={24} className={isSelected ? '' : 'text-black/40'} />
+        <div>
+          <div className="text-base leading-tight">{style.name}</div>
+          <div className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-black/50'}`}>{style.desc}</div>
+        </div>
+        {isSelected && <CheckCircle2 size={20} className="mr-auto" />}
+      </button>
+    );
+  })}
+</div>
           </div>
         </div>
       </div>
@@ -171,40 +236,53 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {CATEGORIES_CONFIG.map(cat => {
-            const isSelected = selectedCats.includes(cat.name);
-            const catQsCount = allQuestions.filter(q => q.category === cat.name).length;
-            const gamesCount = Math.floor(catQsCount / 6);
+       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+  {CATEGORIES_CONFIG.map(cat => {
+    const isSelected = selectedCats.includes(cat.name);
+    const catQsCount = allQuestions ? allQuestions.filter(q => q.category === cat.name).length : 0;
+    const gamesCount = Math.floor(catQsCount / 6);
 
-            return (
-              <button
-                key={cat.name}
-                onClick={() => toggleCategory(cat.name)}
-                disabled={!isSelected && selectedCats.length >= 6}
-                className={`
-                  relative p-5 h-40 rounded-[35px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center gap-2
-                  ${isSelected 
-                    ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105' 
-                    : 'bg-white/40 border-black/5 text-black/60 hover:border-black/20'
-                  }
-                  disabled:opacity-30 disabled:cursor-not-allowed
-                `}
-              >
-                <span className="text-4xl">{cat.icon}</span>
-                <div className="flex flex-col">
-                  <span className="text-[10px] leading-tight mb-1">{cat.name}</span>
-                  <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isSelected ? 'bg-[#F7C705] text-black' : 'bg-black/10 text-black/60'}`}>
-                    {gamesCount} ألعاب متاحة
-                  </div>
-                </div>
-                {isSelected && (
-                  <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705]/50" size={18} />
-                )}
-              </button>
-            );
-          })}
+    return (
+      <button
+        key={cat.name}
+        type="button"
+        onClick={() => toggleCategory(cat.name)}
+        disabled={!isSelected && selectedCats.length >= 6}
+        className={`
+          relative h-44 rounded-[40px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center
+          ${isSelected 
+            ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105' 
+            : 'bg-white border-black/10 text-black hover:border-black/30 hover:bg-white'
+          }
+          disabled:opacity-30 disabled:cursor-not-allowed shadow-lg
+        `}
+      >
+        {/* خلفية الصورة - ملوّنة وواضحة جداً بنسبة 60% */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={cat.icon} 
+            alt="" 
+            className="w-full h-full object-cover opacity-60" 
+          />
+          {/* طبقة تصفية ذكية لإبراز الألوان والعداد السفلي فقط */}
+          <div className={`absolute inset-0 ${isSelected ? 'bg-black/70' : 'bg-white/40'}`} />
         </div>
+
+        {/* تم حذف اسم الصنف هنا والإبقاء فقط على العداد الفني الجذاب بالأسفل لجمالية الواجهة */}
+        <div className="relative z-10 w-full h-full flex flex-col justify-end items-center p-5">
+          <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${isSelected ? 'bg-[#F7C705] text-black' : 'bg-black text-white'}`}>
+            {gamesCount} ألعاب متاحة
+          </div>
+        </div>
+        
+        {/* علامة الاختيار الأنيقة */}
+        {isSelected && (
+          <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705] z-20" size={24} />
+        )}
+      </button>
+    );
+  })}
+</div>
       </div>
 
       <div className="mt-16 flex justify-center">
