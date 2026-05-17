@@ -5,6 +5,44 @@ require('dotenv').config();
 
 const app = express();
 
+
+/////////////////
+const express = require('express');
+const router = express.Router();
+const Category = require('../models/Category'); // استدعاء الموديل
+
+// مسار إضافة صنف جديد (POST)
+router.post('/api/categories', async (req, res) => {
+  try {
+    const { name, icon } = req.body;
+
+    if (!name || !icon) {
+      return res.status(400).json({ success: false, message: 'جميع الحقول مطلوبة' });
+    }
+
+    // إنشاء صنف جديد في قاعدة البيانات
+    const newCategory = new Category({ name, icon });
+    await newCategory.save();
+
+    res.status(201).json({ success: true, message: 'تم حفظ الصنف بنجاح', data: newCategory });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء الحفظ' });
+  }
+});
+
+module.exports = router;
+////////////////////////
+
+
+
+
+
+
+
+
+
+
 // الأسطر السحرية لترجمة البيانات القادمة من الفرونت إند
 // 👈 أضف أو استبدل هذه السطور لرفع حد حجم الصور المرفوعة
 app.use(express.json({ limit: '50mb' }));
@@ -19,6 +57,20 @@ const UserSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
+
+const categorySchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+    unique: true // منع تكرار نفس الاسم
+  },
+  icon: {
+    type: String,
+    required: true
+  }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Category', categorySchema);
 
 const QuestionSchema = new mongoose.Schema({
   category: { type: String, required: true },

@@ -209,7 +209,37 @@ const App: React.FC = () => {
 
       <main className="relative z-10">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
-        {gameState.step === 'admin' && <AdminPanel users={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} onToggleUser={handleToggleUser} questions={allQuestions} onAddQuestion={handleAddQuestion} onDeleteQuestion={handleDeleteQuestion} onExportData={handleExportData} onImportData={handleImportData} onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} />}
+     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      {gameState.step === 'admin' && (
+          <AdminPanel
+            users={users}
+            questions={allQuestions} // 👈 تم تعديلها إلى allQuestions لتتوافق مع الـ State الخاص بكِ
+            onAddUser={handleAddUser}
+            onDeleteUser={handleDeleteUser}
+            onToggleUser={handleToggleUser}
+            onAddQuestion={handleAddQuestion}
+            onDeleteQuestion={handleDeleteQuestion}
+            onImportData={handleImportData}
+            onExportData={handleExportData}
+            onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} // 👈 تم تعديلها للعودة إلى صفحة الـ Setup بنجاح
+            
+            // دالة إضافة الصنف التي تربط لوحة التحكم بالسيرفر مباشرة
+            onAddCategory={async (name, icon) => {
+              try {
+                const response = await fetch('/api/categories', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ name, icon })
+                });
+                return response.ok; 
+              } catch (e) {
+                console.error(e);
+                return false;
+              }
+            }}
+          />
+        )}
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         {gameState.step === 'setup' && <Setup onStart={handleStartGame} isAdmin={currentUser?.role === 'admin'} onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))} allQuestions={allQuestions} />}
         {gameState.step === 'game' && (
           <div className="space-y-8 animate-in fade-in duration-700">

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { UserAccount, Question, Difficulty } from '../types';
 import { UserPlus, UserX, UserCheck, Shield, ArrowLeft, PlusCircle, Trash2, List, Download, Upload, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import { CATEGORIES } from '../data/questions';
-
+///////////////////////////////////////////////////////
 interface AdminPanelProps {
   onImportData: (data: string) => void;
   onExportData: () => void;
@@ -15,14 +15,23 @@ interface AdminPanelProps {
   onAddQuestion: (q: Question) => void;
   onDeleteQuestion: (id: string) => void;
   onBack: () => void;
+  onAddCategory: (name: string, icon: string) => Promise<boolean>; // 👈 أضفنا الصلاحية هنا
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ 
-  users, onAddUser, onDeleteUser, onToggleUser, 
-  questions, onAddQuestion, onDeleteQuestion, 
-  onImportData, onExportData,
-  onBack 
+const AdminPanel: React.FC<AdminPanelProps> = ({
+  users,
+  onAddUser,
+  onDeleteUser,
+  onToggleUser,
+  questions,
+  onAddQuestion,
+  onDeleteQuestion,
+  onImportData,
+  onExportData,
+  onBack,
+  onAddCategory // 👈 استدعاء الدالة هنا
 }) => {
+////////////////////////////////////////////////////////////////////
   const [tab, setTab] = useState<'users' | 'challenges'>('users');
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,6 +69,101 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       alert('تمت إضافة التحدي!');
     }
   };
+/////////////////////////
+const AddCategoryForm: React.FC<{ onAddCategory: (name: string, icon: string) => Promise<boolean> }> = ({ onAddCategory }) => {
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryIcon, setCategoryIcon] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryName || !categoryIcon) {
+      setMessage('الرجاء ملء جميع الحقول ⚠️');
+      setIsSuccess(false);
+      return;
+    }
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      // استدعاء الدالة الممررة لحفظ الصنف في السيرفر
+      const success = await onAddCategory(categoryName, categoryIcon);
+      if (success) {
+        setMessage('تم إضافة الصنف الجديد بنجاح! 🎉');
+        setIsSuccess(true);
+        setCategoryName('');
+        setCategoryIcon('');
+      } else {
+        setMessage('حدث خطأ أثناء حفظ الصنف، قد يكون مكرراً! ❌');
+        setIsSuccess(false);
+      }
+    } catch (error) {
+      setMessage('فشل الاتصال بالسيرفر 🔌');
+      setIsSuccess(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white/90 backdrop-blur-md p-8 rounded-[32px] border-4 border-black shadow-2xl max-w-xl mx-auto text-right rtl mt-8">
+      <div className="flex items-center gap-3 mb-6 border-b-4 border-black pb-3">
+        <span className="text-3xl">📁</span>
+        <h3 className="text-2xl font-black text-black">إضافة صنف (Category) جديد</h3>
+      </div>
+      
+      {message && (
+        <div className={`p-4 rounded-2xl mb-6 text-sm font-black text-center border-2 ${
+          isSuccess 
+            ? 'bg-green-100 border-green-400 text-green-800' 
+            : 'bg-red-100 border-red-400 text-red-800'
+        }`}>
+          {message}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="block text-base font-black text-black mb-2">اسم الصنف الجديد</label>
+          <input
+            type="text"
+            value={categoryName}
+            onChange={(e) => setCategoryName(e.target.value)}
+            placeholder="مثال: مسلسلات إنمي، ألعاب فيديو..."
+            className="w-full bg-black border-4 border-black rounded-2xl py-4 px-5 outline-none text-[#F7C705] font-black text-lg transition-all focus:ring-4 focus:ring-yellow-300"
+          />
+        </div>
+
+        <div>
+          <label className="block text-base font-black text-black mb-2">رابط صورة أو أيقونة الخلفية</label>
+          <input
+            type="text"
+            value={categoryIcon}
+            onChange={(e) => setCategoryIcon(e.target.value)}
+            placeholder="https://jkar.vercel.app/categories/name.png"
+            className="w-full bg-black border-4 border-black rounded-2xl py-4 px-5 outline-none text-[#F7C705] font-black text-lg text-left ltr transition-all focus:ring-4 focus:ring-yellow-300"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-5 rounded-2xl text-xl font-black transition-all transform hover:scale-[1.02] active:scale-95 shadow-xl ${
+            loading 
+              ? 'bg-black/40 text-white/50 cursor-not-allowed' 
+              : 'bg-black text-[#F7C705] hover:shadow-black/20'
+          }`}
+        >
+          {loading ? 'جاري حفظ الصنف الجديد...' : 'إضافة الصنف إلى القائمة الآن'}
+        </button>
+      </form>
+    </div>
+  );
+};
+////////////////////////////////
 
   return (
     <div className="max-w-7xl mx-auto p-6 rtl pb-24">
@@ -74,6 +178,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="flex gap-2 bg-black/5 p-2 rounded-3xl">
           <button onClick={() => setTab('users')} className={`px-8 py-3 rounded-2xl font-black transition-all ${tab === 'users' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>المستخدمين</button>
           <button onClick={() => setTab('challenges')} className={`px-8 py-3 rounded-2xl font-black transition-all ${tab === 'challenges' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>التحديات</button>
+          //////////////////////
+          <AddCategoryForm onAddCategory={onAddCategory} />
+      //////////////////////////
+   
         </div>
 
         <div className="flex gap-3">
