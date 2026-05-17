@@ -20,8 +20,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onBack 
 }) => {
   const [tab, setTab] = useState<'users' | 'challenges'>('users');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
 
   // تهيئة الحقول الجديدة بدون خانة نوع التحدي، ومع دعم صورة السؤال وصورة الجواب
   const [newQ, setNewQ] = useState<Partial<Question>>({
@@ -72,6 +74,112 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     };
     reader.readAsDataURL(file);
   };
+
+  
+{/* 🗂️ قسم التحديات المضافة الذكي والمنظم بالأصناف */}
+<div className="mt-12 bg-black/5 p-6 rounded-3xl border-2 border-black/10">
+  
+  {/* الهيدر الديناميكي للقائمة */}
+  <div className="flex items-center justify-between mb-6 rtl">
+    <div className="flex items-center gap-3">
+      <span className="text-2xl font-black">📋 التحديات المضافة</span>
+      {selectedCategory && (
+        <span className="bg-black text-[#F7C705] text-sm font-black px-3 py-1 rounded-full">
+          صنف: {selectedCategory}
+        </span>
+      )}
+    </div>
+
+    {/* زر العودة للأصناف يظهر فقط عند الدخول داخل صنف معين */}
+    {selectedCategory && (
+      <button
+        onClick={() => setSelectedCategory(null)}
+        className="flex items-center gap-1.5 bg-black text-[#F7C705] font-black px-3 py-1.5 rounded-lg text-xs hover:scale-105 transition-all"
+      >
+        <span>🔙 العودة للأصناف</span>
+      </button>
+    )}
+  </div>
+
+  {/* 1️⃣ العرض الأول: عرض بطاقات الأصناف (Categories Grid) */}
+  {!selectedCategory ? (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 rtl">
+      {/* استخراج الأصناف الفريدة المتاحة في الأسئلة الحالية تلقائياً */}
+      {Array.from(new Set(questions.map((q: any) => q.category))).map((cat: string) => {
+        // حساب عدد الأسئلة المتوفرة داخل هذا الصنف بالتحديد
+        const count = questions.filter((q: any) => q.category === cat).length;
+        
+        return (
+          <div
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            className="bg-white border-4 border-black p-5 rounded-2xl cursor-pointer hover:-translate-y-1 hover:shadow-[4px_4px_0px_#000] transition-all flex justify-between items-center group"
+          >
+            <div className="flex flex-col text-right">
+              <span className="font-black text-lg group-hover:text-amber-600 transition-colors">{cat || "بدون صنف"}</span>
+              <span className="text-xs text-gray-500 font-bold">{count} تحديات متوفرة</span>
+            </div>
+            <span className="text-2xl group-hover:translate-x-1 transition-transform">📂</span>
+          </div>
+        );
+      })}
+
+      {questions.length === 0 && (
+        <div className="col-span-full text-center py-8 text-gray-500 font-bold">
+          📭 لا توجد أي تحديات مضافة في قاعدة البيانات حالياً.
+        </div>
+      )}
+    </div>
+  ) : (
+    /* 2️⃣ العرض الثاني: أسئلة الصنف المحدد فقط عند الدخول إليه */
+    <div className="space-y-3 rtl">
+      {questions
+        .filter((q: any) => q.category === selectedCategory)
+        .map((q: any) => (
+          <div 
+            key={q._id || q.id} 
+            className="bg-white border-4 border-black p-4 rounded-2xl flex justify-between items-center shadow-md animate-in fade-in duration-300"
+          >
+            {/* زر الحذف الفردي من السيرفر والمحلي المتناسق مع دالتك الفعالة */}
+            <button 
+              onClick={() => onDeleteQuestion(q._id || q.id)}
+              className="bg-red-100 hover:bg-red-500 hover:text-white text-red-500 p-2.5 rounded-xl transition-all active:scale-95 border-2 border-transparent hover:border-black"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+
+            {/* تفاصيل التحدي المعروض */}
+            <div className="flex flex-col text-right gap-1">
+              <div className="flex items-center gap-2 justify-end">
+                <span className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded border border-amber-300">
+                  ⭐ {q.points || 100} نقطة
+                </span>
+                <span className="bg-gray-100 text-gray-800 text-[10px] font-black px-2 py-0.5 rounded border border-gray-300">
+                  ⚙️ {q.difficulty === 'easy' ? 'سهل' : q.difficulty === 'medium' ? 'متوسط' : 'صعب'}
+                </span>
+              </div>
+              <p className="font-black text-black text-base mt-1">{q.question}</p>
+              {q.answer && (
+                <p className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded inline-block self-end mt-1">
+                  💡 الإجابة: {q.answer}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+
+      {questions.filter((q: any) => q.category === selectedCategory).length === 0 && (
+        <div className="text-center py-6 text-gray-500 font-bold">
+          الصنف فارغ حالياً بعد إتمام عمليات الحذف.
+        </div>
+      )}
+    </div>
+  )}
+
+</div>
 
   return (
     <div className="max-w-6xl mx-auto p-6 rtl pb-24 text-right">
