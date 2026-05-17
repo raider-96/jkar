@@ -188,7 +188,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddQuestion = async (q: Question) => {
+ const handleAddQuestion = async (q: Question) => {
     try {
       const generatedId = `custom-${Date.now()}`;
 
@@ -199,7 +199,12 @@ const App: React.FC = () => {
         answer: q.answer || '',
         category: q.category || 'عام', 
         difficulty: q.difficulty || 'easy',
-        points: Number(q.points) || 10
+        points: Number(q.points) || 10,
+        
+        // 🚀 إضافة حقول الصور هنا لضمان إرسالها وحفظها في السيرفر
+        image: q.image || (q as any).questionImage || '',
+        questionImage: (q as any).questionImage || q.image || '',
+        answerImage: (q as any).answerImage || ''
       };
 
       const response = await fetch(`${API_URL}/questions`, {
@@ -247,6 +252,7 @@ const handleDeleteQuestion = async (id: string) => {
       alert('❌ حدث خطأ في الاتصال بالسيرفر أثناء محاولة الحذف');
     }
   };
+
   const handleStartGame = (t1: string, t2: string, cats: string[]) => {
     setGameState({
       ...gameState,
