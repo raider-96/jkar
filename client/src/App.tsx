@@ -9,19 +9,28 @@ import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award } from 'lucide-react';
 
-// تأكد أن الرابط ينتهي بـ /api ليتوافق مع مسارات Express وسيرفر Vercel Serverless Functions
-// هذا السطر يضمن أن يقرأ التطبيق أونلاين أو محلياً مع الحفاظ على اللاحقة الموحدة /api
+// رابط الـ API الموحد متوافق مع البيئة المحلية والسحابية (Vercel)
 const API_URL = `${window.location.origin}/api`;
+
 const App: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    step: 'login',
-    teams: [
-      { name: 'الفريق الأول', score: 0, categories: [] },
-      { name: 'الفريق الثاني', score: 0, categories: [] },
-    ],
-    currentTurn: 0,
-    answeredQuestionIds: [],
-    selectedCategories: [],
+  // 1. قراءة وتثبيت حالة المستخدم والخطوة من الـ localStorage لمنع الخروج عند التحديث
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    const savedUser = localStorage.getItem('chgar_user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const savedStep = localStorage.getItem('chgar_step') as any;
+    return {
+      step: savedStep || 'login', // يفتح على آخر صفحة كان عليها اللاعب قبل الـ Refresh
+      teams: [
+        { name: 'الفريق الأول', score: 0, categories: [] },
+        { name: 'الفريق الثاني', score: 0, categories: [] },
+      ],
+      currentTurn: 0,
+      answeredQuestionIds: [],
+      selectedCategories: [],
+    };
   });
 
   const [activeQuestion, setActiveQuestion] = useState<{
@@ -29,12 +38,30 @@ const App: React.FC = () => {
     key: string;
   } | null>(null);
 
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
- // 1. جلب المستخدمين والأسئلة مرة واحدة فقط عند إقلاع التطبيق لمنع التكرار والانهيار
+  // State خاص بإدارة نظام الإشعارات الحديث (Toast Container)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  // دالة ذكية لإطلاق الإشعار وإخفائه بسلاسة تلقائياً بعد 3 ثوانٍ
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // 2. مراقبة وحفظ الجلسة في ذاكرة المتصفح فور حدوث أي تغيير
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('chgar_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('chgar_user');
+    }
+    localStorage.setItem('chgar_step', gameState.step);
+  }, [currentUser, gameState.step]);
+
+  // 3. جلب المستخدمين والأسئلة مرة واحدة فقط عند إقلاع التطبيق لمنع التكرار والانهيار
   useEffect(() => {
     // جلب المستخدمين
     fetch(`${API_URL}/users`)
@@ -56,7 +83,6 @@ const App: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          // حماية إضافية للتأكد أن كل سؤال يحتوي على تصنيف نصي سليم لمنع خطأ startsWith
           const safeQuestions = data.filter(q => q && q.category && typeof q.category === 'string');
           setAllQuestions(safeQuestions);
         } else {
@@ -67,11 +93,12 @@ const App: React.FC = () => {
         console.error("خطأ في جلب الأسئلة:", err);
         setAllQuestions([]);
       });
-  }, []); // 👈 قمنا بجعل المصفوفة فارغة تماماً لتعمل مرة واحدة فقط وتمنع أي Infinite Loop
+  }, []);
+
   const handleLogin = (username: string, password?: string) => {
     const trimmedUsername = username.trim().toLowerCase();
 
-    // دخول الأدمن الفوري والمحلي (تأمين كامل بدون طلب سيرفر)
+    // دخول الأدمن الفوري والمحلي الآمن
     if (trimmedUsername === 'admin') {
       if (password === '123' || !password || password === '...') {
         const adminUser: any = {
@@ -82,53 +109,54 @@ const App: React.FC = () => {
         };
         setCurrentUser(adminUser);
         setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+        showToast('🔓 مرحباً بك يا مشرف! تم تسجيل الدخول بنجاح.', 'success');
         return; 
       }
     }
 
-    // الفحص الآمن لبقية اللاعبين للتأكد من أن المصفوفة جاهزة
     const safeUsers = Array.isArray(users) ? users : [];
     const user = safeUsers.find((u: any) => u.username.toLowerCase() === trimmedUsername);
     
     if (user) {
       if (!user.isActive) {
-        alert('هذا الحساب معطل حالياً من قِبل المشرف');
+        showToast('🔒 هذا الحساب معطل حالياً من قِبل المشرف!', 'error');
         return;
       }
       setCurrentUser(user);
       setGameState((prev: any) => ({ ...prev, step: 'setup' }));
+      showToast(`👋 أهلاً بك مجدداً ${user.username}!`, 'success');
     } else {
-      alert('اسم المستخدم غير موجود، يرجى مراجعة الأدمن لتسجيلك!');
+      showToast('❌ اسم المستخدم غير موجود، يرجى مراجعة الأدمن لتسجيلك!', 'error');
     }
   };
 
-const handleAddUser = async (username: string, password?: string) => {
-  try {
-    const response = await fetch(`${API_URL}/users`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        username: username.trim(), 
-        password: password || "123", // تعيين رمز افتراضي إذا تركه فارغاً
-        role: 'user',
-        isActive: true // تأكد من إرسال حالة الحساب لتجنب رفض السيرفر لها
-      })
-    });
+  const handleAddUser = async (username: string, password?: string) => {
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          username: username.trim(), 
+          password: password || "123", 
+          role: 'user',
+          isActive: true 
+        })
+      });
 
-    if (response.ok) {
-      const newUser = await response.json();
-      setUsers(prev => [...prev, newUser]);
-      alert('تم إضافة المستخدم بنجاح!');
-    } else {
-      const errData = await response.json();
-      alert(errData.error || 'فشل السيرفر في إضافة المستخدم');
+      if (response.ok) {
+        const newUser = await response.json();
+        setUsers(prev => [...prev, newUser]);
+        showToast('👤 تم إضافة المستخدم بنجاح وتخزينه سحابياً!', 'success');
+      } else {
+        const errData = await response.json();
+        showToast(errData.error || 'فشل السيرفر في إضافة المستخدم', 'error');
+      }
+    } catch (err) {
+      console.error("خطأ أثناء إضافة المستخدم:", err);
+      showToast('❌ حدث خطأ غير متوقع أثناء الاتصال بالسيرفر', 'error');
     }
-  } catch (err) {
-    console.error("خطأ أثناء إضافة المستخدم:", err);
-  }
-};
+  };
 
-  // 3. تعديل حالة الحساب من السيرفر (تفعيل/تعطيل)
   const handleToggleUser = async (username: string) => {
     try {
       const response = await fetch(`${API_URL}/users/${username}/toggle`, {
@@ -138,13 +166,13 @@ const handleAddUser = async (username: string, password?: string) => {
       if (response.ok) {
         const updatedUser = await response.json();
         setUsers(prev => (Array.isArray(prev) ? prev : []).map(u => u.username === username ? updatedUser : u));
+        showToast(`⚙️ تم تحديث حالة حساب (${username}) بنجاح!`, 'info');
       }
     } catch (err) {
       console.error("خطأ أثناء تعديل حالة الحساب:", err);
     }
   };
 
-  // 4. حذف المستخدم نهائياً من السيرفر وقاعدة البيانات
   const handleDeleteUser = async (username: string) => {
     try {
       const response = await fetch(`${API_URL}/users/${username}`, {
@@ -153,13 +181,14 @@ const handleAddUser = async (username: string, password?: string) => {
 
       if (response.ok) {
         setUsers(prev => (Array.isArray(prev) ? prev : []).filter(u => u.username !== username));
+        showToast(`🗑️ تم حذف حساب المستخدم (${username}) نهائياً.`, 'info');
       }
     } catch (err) {
       console.error("خطأ أثناء حذف المستخدم:", err);
     }
   };
 
-const handleAddQuestion = async (q: Question) => {
+  const handleAddQuestion = async (q: Question) => {
     try {
       const generatedId = `custom-${Date.now()}`;
 
@@ -183,22 +212,24 @@ const handleAddQuestion = async (q: Question) => {
 
       if (response.ok) {
         setAllQuestions(prev => [...prev, resData]);
-        // 👈 قمنا بإلغاء الـ alert من هنا لمنع التكرار المزدوج مع AdminPanel
+        showToast('🧠 تم إضافة السؤال الجديد وحفظه في السيرفر بنجاح!', 'success');
       } else {
-        alert(`❌ فشل السيرفر في التخزين: ${resData.error || resData.message}`);
+        showToast(`❌ فشل السيرفر في التخزين: ${resData.error || resData.message}`, 'error');
       }
     } catch (err) {
       console.error("خطأ في إضافة السؤال للسيرفر:", err);
+      showToast('❌ حدث خطأ اتصال، لم يتم حفظ السؤال.', 'error');
     }
   };
-const handleDeleteQuestion = (id: string) => {
+
+  const handleDeleteQuestion = async (id: string) => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    // نتحقق من الـ id العادي أو الـ _id القادم من المونجو لضمان حذف السؤال المحدد فقط
     const updated = safeQuestions.filter((q: any) => {
       const qId = q.id || q._id || q['_id'];
       return qId !== id;
     });
     setAllQuestions(updated);
+    showToast('🗑️ تم حذف السؤال المحدّد من القائمة الحالية بنجاح.', 'info');
   };
 
   const handleStartGame = (t1: string, t2: string, cats: string[]) => {
@@ -212,6 +243,7 @@ const handleDeleteQuestion = (id: string) => {
       selectedCategories: cats,
       answeredQuestionIds: [],
     });
+    showToast('🚀 انطلق التحدي الجبار! بالتوفيق للفريقين.', 'info');
   };
 
   const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
@@ -227,7 +259,7 @@ const handleDeleteQuestion = (id: string) => {
     if (available.length === 0) {
       const resetAvailable = safeQuestions.filter(q => q.category === category && q.difficulty === difficulty);
       if (resetAvailable.length === 0) {
-        alert("لا توجد أسئلة متوفرة في هذا القسم حالياً!");
+        showToast('⚠️ لا توجد أسئلة متوفرة في هذا القسم حالياً!', 'error');
         return;
       }
       chosenQuestion = resetAvailable[Math.floor(Math.random() * resetAvailable.length)];
@@ -250,6 +282,7 @@ const handleDeleteQuestion = (id: string) => {
     const newTeams = [...gameState.teams] as [Team, Team];
     newTeams[teamIdx].score += amount;
     setGameState(prev => ({ ...prev, teams: newTeams }));
+    showToast(`🎯 تم تعديل نقاط ${newTeams[teamIdx].name} بمقدار ${amount}`, 'info');
   };
 
   const handleAnswer = (winnerIndex: number | null) => {
@@ -264,6 +297,9 @@ const handleDeleteQuestion = (id: string) => {
         origin: { y: 0.6 },
         colors: ['#6366f1', '#a855f7', '#ec4899']
       });
+      showToast(`🏆 إجابة صحيحة! +${activeQuestion.question.points} نقطة لـ ${newTeams[winnerIndex].name}`, 'success');
+    } else {
+      showToast('💥 تم تجاوز السؤال بدون رابح نقاط.', 'info');
     }
 
     const newAnswered = [...gameState.answeredQuestionIds, activeQuestion.key];
@@ -292,11 +328,15 @@ const handleDeleteQuestion = (id: string) => {
       step: 'setup',
       answeredQuestionIds: [],
     }));
+    showToast('🔄 تم إعداد طاولة التحدي لبدء مباراة جديدة!', 'info');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setGameState(prev => ({ ...prev, step: 'login' }));
+    localStorage.removeItem('chgar_user');
+    localStorage.removeItem('chgar_step');
+    showToast('🔒 تم تسجيل الخروج بنجاح وبأمان.', 'info');
   };
 
   return (
@@ -419,6 +459,18 @@ const handleDeleteQuestion = (id: string) => {
           currentTurn={gameState.currentTurn}
           onAnswer={handleAnswer}
         />
+      )}
+
+      {/* 🔔 حاوية نظام الإشعارات الاحترافي السلس والملون المتناسق مع ألوان چگار */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-black font-black text-lg transform animate-in slide-in-from-bottom duration-300 rtl
+          ${toast.type === 'success' ? 'bg-[#F7C705] text-black' : ''}
+          ${toast.type === 'error' ? 'bg-red-500 text-white' : ''}
+          ${toast.type === 'info' ? 'bg-black text-[#F7C705]' : ''}
+        `}>
+          <span>{toast.message}</span>
+          <div className={`w-2.5 h-2.5 rounded-full bg-current ${toast.type === 'success' ? 'bg-black animate-ping' : 'animate-ping'}`} />
+        </div>
       )}
 
       <footer className="relative z-10 mt-auto py-8 text-center text-slate-600 text-sm">
