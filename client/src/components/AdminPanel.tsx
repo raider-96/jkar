@@ -20,8 +20,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   onBack 
 }) => {
   const [tab, setTab] = useState<'users' | 'challenges'>('users');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
 
   // تهيئة الحقول الجديدة بدون خانة نوع التحدي، ومع دعم صورة السؤال وصورة الجواب
   const [newQ, setNewQ] = useState<Partial<Question>>({
@@ -73,8 +75,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     reader.readAsDataURL(file);
   };
 
-  return (
+return (
     <div className="max-w-6xl mx-auto p-6 rtl pb-24 text-right">
+      {/* الهيدر العلوي وأزرار التنقل */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
         <h1 className="text-4xl font-black text-black flex items-center gap-3">
           <Shield className="text-black" size={40} /> لوحة الإدارة
@@ -98,7 +101,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         </button>
       </div>
 
+      {/* 🔄 تبديل الواجهات بناءً على التبويب النشط */}
       {tab === 'users' ? (
+        /* 👥 أولاً: واجهة إدارة المستخدمين */
         <div className="space-y-10">
           <div className="bg-black text-[#F7C705] rounded-[40px] p-10 shadow-2xl border-4 border-black/5">
             <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
@@ -166,6 +171,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         </div>
       ) : (
+        /* 🎯 ثانياً: واجهة إدارة التحديات (صنف التحديات) */
         <div className="space-y-10">
           <div className="bg-black text-[#F7C705] rounded-[40px] p-10 shadow-2xl border-4 border-black/5">
             <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
@@ -197,9 +203,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               </div>
 
-              {/* قسم رفع الصور المطور: صورة السؤال وصورة الجواب */}
+              {/* قسم رفع الصور المطور */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 1. حقل رفع صورة السؤال */}
                 <div className="space-y-2">
                   <label className="text-sm font-black mr-2">رفع صورة السؤال / الباركود (اختياري)</label>
                   <div className="flex flex-col gap-3">
@@ -231,7 +236,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 </div>
 
-                {/* 2. حقل رفع صورة الجواب */}
                 <div className="space-y-2">
                   <label className="text-sm font-black mr-2">رفع صورة الجواب التوضيحية (اختياري)</label>
                   <div className="flex flex-col gap-3">
@@ -295,35 +299,99 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             </form>
           </div>
 
+          {/* 🗂️ حاوية التحديات المضافة الذكية والمنظمة بالأصناف والمجلدات */}
           <div className="bg-black/5 rounded-[48px] p-10 border-4 border-black/5">
-            <h2 className="text-2xl font-black text-black mb-10 flex items-center gap-2">
-              <List size={24} /> التحديات المضافة 
-              ({questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length})
-            </h2>
-            <div className="space-y-4">
-              {questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).reverse().map((q: any) => {
-                const safeId = q._id || q.id;
-                return (
-                  <div key={safeId} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm">
-                    <div className="flex-1">
-                      <div className="flex gap-2 mb-2">
-                        <span className="bg-black text-[#F7C705] text-[10px] px-2 py-0.5 rounded font-black">{q.category}</span>
-                        <span className="bg-black/10 text-black text-[10px] px-2 py-0.5 rounded font-black">
-                          {q.questionImage || q.image ? '📸 يحتوي على صورة' : '📝 نصي'}
-                        </span>
-                      </div>
-                      <p className="text-black font-black">{q.question}</p>
-                    </div>
-                    <button
-                      onClick={() => onDeleteQuestion(safeId)}
-                      className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4"
-                    >
-                      <Trash2 size={24} />
-                    </button>
-                  </div>
-                );
-              })}
+            {/* الهيدر الديناميكي للقائمة */}
+            <div className="flex items-center justify-between mb-10 rtl">
+              <h2 className="text-2xl font-black text-black flex items-center gap-2">
+                <List size={24} /> التحديات المضافة 
+                ({questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length})
+                {selectedCategory && (
+                  <span className="bg-black text-[#F7C705] text-xs font-black px-3 py-1 rounded-full mr-2">
+                    صنف: {selectedCategory}
+                  </span>
+                )}
+              </h2>
+
+              {selectedCategory && (
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="flex items-center gap-1.5 bg-black text-[#F7C705] font-black px-4 py-2 rounded-2xl text-xs hover:scale-105 transition-all shadow-md"
+                >
+                  <span>🔙 العودة للأصناف</span>
+                </button>
+              )}
             </div>
+
+            {/* 1️⃣ العرض الأول: عرض المجلدات */}
+            {!selectedCategory ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rtl">
+                {Array.from(
+                  new Set(
+                    questions
+                      .filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id))
+                      .map((q: any) => q.category)
+                  )
+                ).map((cat: string) => {
+                  const count = questions.filter(
+                    (q: any) => q && q.category === cat && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)
+                  ).length;
+                  
+                  return (
+                    <div
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className="bg-white border-4 border-black/10 p-6 rounded-[32px] cursor-pointer hover:border-black/30 hover:-translate-y-1 hover:shadow-lg transition-all flex justify-between items-center group"
+                    >
+                      <div className="flex flex-col text-right">
+                        <span className="font-black text-xl text-black group-hover:text-amber-500 transition-colors">
+                          {cat || "عام / بدون صنف"}
+                        </span>
+                        <span className="text-xs text-gray-500 font-bold mt-1">{count} تحديات مضافة</span>
+                      </div>
+                      <span className="text-3xl group-hover:scale-110 transition-transform">📂</span>
+                    </div>
+                  );
+                })}
+
+                {questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length === 0 && (
+                  <div className="col-span-full text-center py-8 text-gray-400 font-bold">
+                    📭 لا توجد أي تحديات مضافة حالياً.
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* 2️⃣ العرض الثاني: عرض الأسئلة داخل الصنف */
+              <div className="space-y-4">
+                {questions
+                  .filter((q: any) => q && q.category === selectedCategory && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id))
+                  .reverse()
+                  .map((q: any) => {
+                    const safeId = q._id || q.id;
+                    return (
+                      <div key={safeId} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm animate-in fade-in duration-300">
+                        <div className="flex-1 text-right">
+                          <div className="flex gap-2 mb-2 justify-end">
+                            <span className="bg-black/10 text-black text-[10px] px-2 py-0.5 rounded font-black">
+                              {q.questionImage || q.image ? '📸 يحتوي على صورة' : '📝 نصي'}
+                            </span>
+                            <span className="bg-black text-[#F7C705] text-[10px] px-2 py-0.5 rounded font-black">
+                              {q.category}
+                            </span>
+                          </div>
+                          <p className="text-black font-black text-lg">{q.question}</p>
+                        </div>
+                        <button
+                          onClick={() => onDeleteQuestion(safeId)}
+                          className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4 border border-transparent hover:border-black"
+                        >
+                          <Trash2 size={24} />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
           </div>
         </div>
       )}
