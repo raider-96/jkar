@@ -64,18 +64,30 @@ const [gameState, setGameState] = useState<GameState>({
         setUsers([]);
       });
 
-    fetch(`${API_URL}/questions`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const processed = data.map((q: any) => ({
-            ...q,
-            imageUrl: q.imageUrl ? (q.imageUrl.startsWith('http') ? q.imageUrl : `${window.location.origin}${q.imageUrl.startsWith('/') ? '' : '/'}${q.imageUrl}`) : ""
-          }));
-          setAllQuestions(processed);
+  fetch(`${API_URL}/questions`)
+  .then(res => res.json())
+  .then(data => {
+    if (Array.isArray(data)) {
+      const processed = data.map((q: any) => {
+        let finalImageUrl = "";
+        if (q.imageUrl) {
+          if (q.imageUrl.startsWith('http://') || q.imageUrl.startsWith('https://')) {
+            finalImageUrl = q.imageUrl;
+          } else {
+            // تنظيف الشرطة المائلة الزائدة لضمان بناء مسار صحيح للصور المحلية
+            const cleanPath = q.imageUrl.startsWith('/') ? q.imageUrl.substring(1) : q.imageUrl;
+            finalImageUrl = `${window.location.origin}/${cleanPath}`;
+          }
         }
-      })
-      .catch(err => console.error("خطأ في جلب الأسئلة:", err));
+        return {
+          ...q,
+          imageUrl: finalImageUrl
+        };
+      });
+      setAllQuestions(processed);
+    }
+  })
+  .catch(err => console.error("خطأ في جلب الأسئلة:", err));
   }, [gameState.step]);
 
   const handleLogin = (username: string, password?: string) => {
