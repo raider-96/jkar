@@ -1,130 +1,120 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Question } from '../types';
-import { Timer, CheckCircle, XCircle, Eye, Image as ImageIcon, UserCircle } from 'lucide-react';
+import { Eye, Check, X, HelpCircle, ImageIcon } from 'lucide-react';
 
 interface QuestionViewProps {
   question: Question;
-  teams: [string, string];
-  currentTurn: 0 | 1;
+  teams: string[];
+  currentTurn: number;
   onAnswer: (winnerIndex: number | null) => void;
 }
 
 const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTurn, onAnswer }) => {
   const [showAnswer, setShowAnswer] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [isSecondChance, setIsSecondChance] = useState(false);
-  const [activeTeamIdx, setActiveTeamIdx] = useState(currentTurn);
-
-  useEffect(() => {
-    if (timeLeft > 0 && !showAnswer) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !showAnswer && !isSecondChance) {
-      setIsSecondChance(true);
-      setActiveTeamIdx(currentTurn === 0 ? 1 : 0);
-      setTimeLeft(20);
-    }
-  }, [timeLeft, showAnswer, isSecondChance, currentTurn]);
-
-  const getChallengeIcon = () => {
-    switch(question.type) {
-      case 'image': return <ImageIcon className="text-[#F7C705]" size={32} />;
-      case 'act': return <UserCircle className="text-[#F7C705]" size={32} />;
-      default: return null;
-    }
-  };
-
-  const getChallengeLabel = () => {
-    switch(question.type) {
-      case 'image': return 'تحدي تخمين الصورة';
-      case 'act': return 'تحدي التمثيل';
-      default: return 'سؤال عام';
-    }
-  };
-
+// تخمين نوع التحدي بناءً على التصنيف لضمان عدم حدوث خطأ عند القراءة
+  const currentCategory = question?.category || '';
+  const isImageChallenge = currentCategory.includes('صور') || currentCategory.includes('تخمين');
+  const isActingChallenge = currentCategory.includes('تمثيل') || currentCategory.includes('حركة');
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md rtl">
-      <div className="bg-[#F7C705] border-8 border-black w-full max-w-4xl max-h-[90vh] rounded-[60px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col animate-in zoom-in-95 duration-300">
-        {/* Header - Stays Fixed */}
-        <div className="px-8 py-6 flex justify-between items-center bg-black text-[#F7C705] shrink-0">
-          <div>
-            <span className="text-[10px] uppercase font-black opacity-60 block tracking-widest mb-1">
-              {isSecondChance ? 'فرصة ذهبية ثانية:' : 'دور الفريق:'}
-            </span>
-            <span className="text-2xl font-black">{teams[activeTeamIdx]}</span>
-          </div>
-          <div className="flex items-center gap-3 bg-[#F7C705]/10 px-6 py-3 rounded-[24px] border border-[#F7C705]/20">
-            <Timer size={28} className={timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[#F7C705]'} />
-            <span className={`text-4xl font-mono font-black ${timeLeft <= 5 ? 'text-red-500' : 'text-[#F7C705]'}`}>
-              {timeLeft}
-            </span>
-          </div>
-        </div>
+    <div className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-6 rtl text-white animate-in fade-in duration-300">
+      
+      {/* شريط علوي ذكي يوضح نوع التحدي المفتوح حالياً */}
+      <div className="bg-[#F7C705] text-black px-6 py-2 rounded-full font-black text-sm mb-6 flex items-center gap-2 border-2 border-black shadow-lg">
+        {isImageChallenge && <span>📸 تحدي تخمين الصور</span>}
+        {isActingChallenge && <span>🎭 تحدي التمثيل والمسرح السري</span>}
+        {!isImageChallenge && !isActingChallenge && <span>🧠 تحدي السؤال الثقافي</span>}
+        <span className="bg-black text-[#F7C705] px-2 py-0.5 rounded-md text-xs">{question.points} نقطة</span>
+      </div>
 
-        {/* Content Area - Scrollable */}
-        <div className="p-10 md:p-16 text-center overflow-y-auto custom-scrollbar flex-1">
-          <div className="flex flex-col items-center gap-6 mb-12">
-            <div className="flex items-center gap-3 bg-black text-[#F7C705] px-8 py-3 rounded-full text-lg font-black shadow-xl">
-              {getChallengeIcon()}
-              <span>{getChallengeLabel()} • {question.points} نقطة</span>
+      {/* نص التحدي أو السؤال الأساسي في المنتصف */}
+      <h2 className="text-3xl font-black text-center max-w-3xl mb-8 leading-relaxed tracking-wide">
+        {question.question}
+      </h2>
+
+      {/* 🖼️ المرحلة الأولى: عرض صورة السؤال أو الباركود (تظهر فقط قبل كشف الإجابة) */}
+      {!showAnswer && (question as any).questionImage && (
+        <div className="mb-8 max-w-md w-full bg-white p-4 rounded-3xl border-4 border-[#F7C705] shadow-[0_20px_50px_rgba(247,199,5,0.2)] animate-in zoom-in-95 duration-300">
+          <img 
+            src={(question as any).questionImage || (question as any).image}
+            alt="صورة التحدي الجاري" 
+            className="max-h-64 w-full object-contain rounded-2xl mx-auto"
+            onError={(e) => {
+              // حماية في حال كان الرابط مكسوراً
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          {isActingChallenge && (
+            <div className="bg-black text-[#F7C705] text-xs font-black text-center mt-3 py-1.5 px-3 rounded-xl border border-[#F7C705]/30">
+              📲 خاص بالمتحدي: التقط الباركود بكاميرا هاتفك لبدء التمثيل سرياً!
             </div>
-            {question.image && (
-              <div className="w-full max-w-lg h-64 overflow-hidden rounded-[40px] border-8 border-black shadow-2xl mt-4 shrink-0">
-                <img src={question.image} alt="Challenge" className="w-full h-full object-cover" />
-              </div>
-            )}
+          )}
+        </div>
+      )}
+
+      {/* 🖼️ المرحلة الثانية: عرض الإجابة النصية وصورة الإجابة التوضيحية (تظهر بعد الضغط على زر الكشف) */}
+      {showAnswer && (
+        <div className="flex flex-col items-center gap-6 max-w-md w-full text-center animate-in zoom-in-95 duration-300">
+          {/* الإجابة النصية الصريحة */}
+          <div className="bg-emerald-500 text-white font-black text-4xl px-12 py-3 rounded-2xl border-4 border-black shadow-2xl tracking-wide transform rotate-1">
+            {question.answer}
           </div>
           
-          <h2 className="text-3xl md:text-5xl font-black text-black mb-16 leading-tight max-w-3xl mx-auto">
-            {question.question}
-          </h2>
-
-          <div className="space-y-8 pb-10">
-            {!showAnswer ? (
-              <button
-                onClick={() => setShowAnswer(true)}
-                className="group flex items-center gap-4 mx-auto bg-black hover:scale-105 text-[#F7C705] px-16 py-8 rounded-[32px] transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)]"
-              >
-                <Eye size={36} />
-                <span className="text-3xl font-black uppercase tracking-tighter">إظهار الإجابة</span>
-              </button>
-            ) : (
-              <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
-                <div className="bg-black/5 border-4 border-black/10 p-10 rounded-[48px] mb-12 relative">
-                  <span className="bg-black text-[#F7C705] text-xs absolute -top-4 right-12 px-6 py-2 rounded-full font-black uppercase">الإجابة الصحيحة</span>
-                  <p className="text-4xl md:text-5xl font-black text-black">{question.answer}</p>
-                </div>
-                
-                <p className="text-black/40 mb-8 font-black uppercase tracking-widest text-sm">تحديد الفريق الفائز بالنقطة</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <button
-                    onClick={() => onAnswer(0)}
-                    className="flex flex-col items-center gap-2 bg-black hover:bg-black/90 text-[#F7C705] font-black py-6 rounded-[32px] shadow-2xl transition-all active:scale-95"
-                  >
-                    <CheckCircle size={32} />
-                    <span className="text-xl">{teams[0]}</span>
-                  </button>
-                  <button
-                    onClick={() => onAnswer(1)}
-                    className="flex flex-col items-center gap-2 bg-black hover:bg-black/90 text-[#F7C705] font-black py-6 rounded-[32px] shadow-2xl transition-all active:scale-95"
-                  >
-                    <CheckCircle size={32} />
-                    <span className="text-xl">{teams[1]}</span>
-                  </button>
-                  <button
-                    onClick={() => onAnswer(null)}
-                    className="flex flex-col items-center gap-2 bg-white/40 border-4 border-black/10 text-black/40 font-black py-6 rounded-[32px] transition-all hover:bg-white/60 active:scale-95"
-                  >
-                    <XCircle size={32} />
-                    <span className="text-xl">لا أحد</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* صورة الإجابة التوضيحية المدعومة من لوحة الإدارة */}
+          {(question as any).answerImage && (
+            <div className="w-full bg-white p-4 rounded-3xl border-4 border-emerald-400 shadow-[0_20px_50px_rgba(16,185,129,0.2)]">
+              <img 
+                src={(question as any).answerImage || (question as any).answerImg}
+                alt="صورة تأكيد الإجابة" 
+                className="max-h-64 w-full object-contain rounded-2xl mx-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
         </div>
+      )}
+
+      {/* 🎛️ لوحة تحكم وإدارة نتيجة التحدي الحالي */}
+      <div className="mt-12 w-full max-w-xl">
+        {!showAnswer ? (
+          <button 
+            onClick={() => setShowAnswer(true)}
+            className="w-full bg-[#F7C705] text-black hover:bg-[#d6ab04] px-8 py-4 rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all border-4 border-black shadow-[0_8px_0_#000] active:translate-y-2 active:shadow-none"
+          >
+            <Eye size={24} />
+            كشف الإجابة الصحيحة وإظهار الصور
+          </button>
+        ) : (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <p className="text-center text-sm font-bold text-slate-400 mb-2">احتساب نقاط التحدي للفريق الفائز:</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => onAnswer(0)} 
+                className="bg-black text-[#F7C705] border-2 border-[#F7C705] hover:bg-emerald-500 hover:text-white hover:border-black px-4 py-3.5 rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Check size={20} />
+                {teams[0]}
+              </button>
+              <button 
+                onClick={() => onAnswer(1)} 
+                className="bg-black text-[#F7C705] border-2 border-[#F7C705] hover:bg-emerald-500 hover:text-white hover:border-black px-4 py-3.5 rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Check size={20} />
+                {teams[1]}
+              </button>
+            </div>
+            <button 
+              onClick={() => onAnswer(null)} 
+              className="w-full bg-slate-800 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-black transition-all flex items-center justify-center gap-2 border-2 border-slate-700"
+            >
+              <X size={18} />
+              لم يجب أحد (تجاوز بدون نقاط)
+            </button>
+          </div>
+        )}
       </div>
+
     </div>
   );
 };
