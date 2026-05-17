@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { CATEGORIES_CONFIG, QUESTIONS } from '../data/questions';
 import { motion } from 'framer-motion';
@@ -6,7 +5,7 @@ import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles } from '
 import { HelpType, Question } from '../types';
 
 interface SetupProps {
-  onStart: (team1: string, team2: string, selectedCats: string[], t1Helps: HelpType[], t2Helps: HelpType[]) => void;
+  onStart: (team1: string, team2: string, selectedCats: string[], t1Helps: HelpType[], text2Helps: HelpType[]) => void;
   isAdmin: boolean;
   onOpenAdmin: () => void;
   allQuestions: Question[];
@@ -47,16 +46,20 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
   };
 
   const handleStart = () => {
+    // التأكد من اكتمال جميع الشروط قبل تفعيل النقل
     if (selectedCats.length === 6 && team1Helps.length === 3 && team2Helps.length === 3) {
       onStart(team1, team2, selectedCats, team1Helps, team2Helps);
     }
   };
 
+  // قياس جاهزية زر البدء النهائي
+  const isGameReady = selectedCats.length === 6 && team1Helps.length === 3 && team2Helps.length === 3;
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-6xl mx-auto p-6 rtl pb-20"
+      className="max-w-6xl mx-auto p-6 rtl pb-20 text-right"
     >
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
         <h1 className="text-5xl font-black text-black tracking-tighter uppercase">إعداد اللعبة</h1>
@@ -90,9 +93,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
             <li className="flex gap-3"><span className="text-yellow-500">●</span> يتم تشكيل فريقين متنافسين.</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> كل فريق يختار 3 أصناف (المجموع 6 أصناف للعبة).</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> لكل صنف 3 مستويات صعوبة: سهل (100)، متوسط (200)، صعب (400).</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل مستوى صعوبة يحتوي على سؤالين في القيم الواحد.</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> الفائز هو الفريق الذي يجمع أكبر عدد من النقاط.</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> الأسئلة التي تتم الإجابة عليها لا تتكرر في المرات القادمة.</li>
           </ul>
         </div>
       )}
@@ -113,17 +114,19 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           </div>
           <div className="space-y-4">
             <h3 className="text-sm font-black text-black/40 uppercase tracking-widest flex items-center gap-2">
-              <Sparkles size={16} /> اختر 3 وسائل مساعدة
+              <Sparkles size={16} /> اختر 3 وسائل مساعدة ({team1Helps.length} / 3)
             </h3>
             <div className="grid grid-cols-1 gap-2">
               {HELPS_CONFIG.map(help => (
                 <button
                   key={help.type}
+                  type="button"
                   onClick={() => toggleHelp(1, help.type)}
-                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team1Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
+                  disabled={!team1Helps.includes(help.type) && team1Helps.length >= 3}
+                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black disabled:opacity-40 ${team1Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
                 >
                   <div className="text-sm">{help.name}</div>
-                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
+                  <div className="text-[10px] opacity-50 font-bold">{help.desc}</div>
                 </button>
               ))}
             </div>
@@ -145,17 +148,19 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           </div>
           <div className="space-y-4">
             <h3 className="text-sm font-black text-black/40 uppercase tracking-widest flex items-center gap-2">
-              <Sparkles size={16} /> اختر 3 وسائل مساعدة
+              <Sparkles size={16} /> اختر 3 وسائل مساعدة ({team2Helps.length} / 3)
             </h3>
             <div className="grid grid-cols-1 gap-2">
               {HELPS_CONFIG.map(help => (
                 <button
                   key={help.type}
+                  type="button"
                   onClick={() => toggleHelp(2, help.type)}
-                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team2Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
+                  disabled={!team2Helps.includes(help.type) && team2Helps.length >= 3}
+                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black disabled:opacity-40 ${team2Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
                 >
                   <div className="text-sm">{help.name}</div>
-                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
+                  <div className="text-[10px] opacity-50 font-bold">{help.desc}</div>
                 </button>
               ))}
             </div>
@@ -163,6 +168,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
         </div>
       </div>
 
+      {/* قسم اختيار الأصناف المعدل */}
       <div className="bg-black/5 p-8 md:p-12 rounded-[48px] border-4 border-black/5">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
           <h2 className="text-3xl font-black text-black">اختر 6 أصناف للعبة</h2>
@@ -171,7 +177,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {CATEGORIES_CONFIG.map(cat => {
             const isSelected = selectedCats.includes(cat.name);
             const catQsCount = allQuestions.filter(q => q.category === cat.name).length;
@@ -180,26 +186,40 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
             return (
               <button
                 key={cat.name}
+                type="button"
                 onClick={() => toggleCategory(cat.name)}
                 disabled={!isSelected && selectedCats.length >= 6}
                 className={`
-                  relative p-5 h-40 rounded-[35px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center gap-2
+                  relative h-40 rounded-[35px] border-4 transition-all duration-300 overflow-hidden flex flex-col items-center justify-between p-4
                   ${isSelected 
-                    ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105' 
-                    : 'bg-white/40 border-black/5 text-black/60 hover:border-black/20'
+                    ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105 -rotate-1' 
+                    : 'bg-white/50 border-black/5 text-black hover:border-black/20'
                   }
                   disabled:opacity-30 disabled:cursor-not-allowed
                 `}
               >
-                <span className="text-4xl">{cat.icon}</span>
-                <div className="flex flex-col">
-                  <span className="text-[10px] leading-tight mb-1">{cat.name}</span>
-                  <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isSelected ? 'bg-[#F7C705] text-black' : 'bg-black/10 text-black/60'}`}>
+                {/* الخلفية الرسومية المستدعية للصورة بنجاح بدلاً من النص الجاف */}
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                  <img 
+                    src={cat.icon} 
+                    alt="" 
+                    className="w-full h-full object-cover opacity-30 transition-transform duration-500 hover:scale-110" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                </div>
+
+                {/* المحتوى النصي الظاهر فوق الصورة بوضوح */}
+                <div className="relative z-10 w-full h-full flex flex-col justify-end items-center gap-1">
+                  <span className="font-black text-sm text-center text-white drop-shadow-md leading-tight">
+                    {cat.name}
+                  </span>
+                  <div className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-black text-[#F7C705]">
                     {gamesCount} ألعاب متاحة
                   </div>
                 </div>
+
                 {isSelected && (
-                  <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705]/50" size={18} />
+                  <CheckCircle2 className="absolute top-3 left-3 text-[#F7C705] z-20" size={18} />
                 )}
               </button>
             );
@@ -210,11 +230,11 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
       <div className="mt-16 flex justify-center">
         <button
           onClick={handleStart}
-          disabled={selectedCats.length !== 6}
+          disabled={!isGameReady}
           className={`
             px-20 py-6 rounded-3xl text-2xl font-black transition-all transform hover:scale-105 active:scale-95 shadow-2xl
-            ${selectedCats.length === 6
-              ? 'bg-black text-[#F7C705] hover:shadow-black/20'
+            ${isGameReady
+              ? 'bg-black text-[#F7C705] hover:shadow-black/20 cursor-pointer'
               : 'bg-black/10 text-black/20 cursor-not-allowed'
             }
           `}
