@@ -25,7 +25,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     >
       {/* WhatsApp Floating Button */}
       <a 
-        href="https://wa.me/YOUR_NUMBER" 
+        href="https://wa.me/07822771784" 
         target="_blank" 
         rel="noopener noreferrer"
         className="fixed bottom-10 left-10 bg-[#25D366] text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform z-[200] flex items-center gap-2 font-black"
@@ -42,7 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             className="p-1 bg-[#F7C705] rounded-[40px] shadow-2xl border-4 border-[#F7C705]/20"
           >
             <img 
-              src="https://raw.githubusercontent.com/stackblitz/stackblitz-images/main/chgar-logo.png" 
+              src="img/lo.jpg" 
               alt="Chgar Logo" 
               className="w-36 h-36 rounded-[35px] object-cover"
               onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/150?text=CHGAR"; }}
