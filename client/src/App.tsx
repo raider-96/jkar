@@ -210,6 +210,7 @@ const App: React.FC = () => {
       <main className="relative z-10">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
         {gameState.step === 'admin' && <AdminPanel users={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} onToggleUser={handleToggleUser} questions={allQuestions} onAddQuestion={handleAddQuestion} onDeleteQuestion={handleDeleteQuestion} onExportData={handleExportData} onImportData={handleImportData} onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} />}
+        {gameState.step === 'setup' && <Setup onStart={handleStartGame} isAdmin={currentUser?.role === 'admin'} onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))} allQuestions={allQuestions} />}
         {gameState.step === 'game' && (
           <div className="space-y-8 animate-in fade-in duration-700">
             <ScoreBoard teams={gameState.teams} currentTurn={gameState.currentTurn} onAdjustScore={(idx, amt) => { const nt = [...gameState.teams] as [Team, Team]; nt[idx].score += amt; setGameState(prev => ({ ...prev, teams: nt })); }} />
