@@ -4,6 +4,7 @@ export type ChallengeType = 'text' | 'image' | 'act' | 'sound';
 
 export interface Question {
   id: string;
+  _id?: string; // لدعم معرّف قاعدة البيانات
   category: string;
   difficulty: Difficulty;
   question: string;
@@ -11,6 +12,8 @@ export interface Question {
   points: number;
   image?: string;
   type?: ChallengeType;
+  questionImage?: string; // 👈 أضف هذا السطر هنا
+  answerImage?: string;   // 👈 وأضف هذا السطر هنا
   options?: string[];
 }
 

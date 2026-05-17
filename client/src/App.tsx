@@ -224,26 +224,33 @@ const App: React.FC = () => {
 
 const handleDeleteQuestion = async (id: string) => {
     try {
-      // إرسال طلب الحذف الفعلي إلى قاعدة البيانات السحابية عبر السيرفر
-      const response = await fetch(`${API_URL}/questions/${id}`, {
+      // إرسال طلب الحذف الفعلي إلى الباك إند
+      const response = await fetch(`${API_URL}/api/questions/${id}`, {
         method: 'DELETE',
       });
 
-      if (response.ok) {
-        // إذا نجح الحذف من السيرفر، نقوم بتحديث الواجهة فوراً
-        const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-        const updated = safeQuestions.filter((q: any) => {
-          const qId = q.id || q._id || q['_id'];
-          return qId !== id;
+      // إذا لم ينجح المسار الأول، نجرب المسار البديل بدون /api/
+      if (!response.ok) {
+        const secondaryResponse = await fetch(`${API_URL}/questions/${id}`, {
+          method: 'DELETE',
         });
-        setAllQuestions(updated);
-        showToast('🗑️ تم حذف السؤال نهائياً من قاعدة البيانات!', 'info');
-      } else {
-        const resData = await response.json();
-        showToast(`❌ فشل السيرفر في حذف السؤال: ${resData.error || resData.message}`, 'error');
+        
+        if (!secondaryResponse.ok) {
+          throw new Error('فشل الحذف من كلا المسارين');
+        }
       }
+
+      // تحديث الواجهة محلياً فور نجاح الحذف من السيرفر
+      const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
+      const updated = safeQuestions.filter((q: any) => {
+        const qId = q._id || q.id;
+        return qId !== id;
+      });
+      setAllQuestions(updated);
+      showToast('🗑️ تم حذف التحدي نهائياً من قاعدة البيانات بنجاح!', 'info');
+
     } catch (err) {
-      console.error("خطأ أثناء حذف السؤال من السيرفر:", err);
+      console.error("خطأ أثناء حذف السؤال:", err);
       showToast('❌ حدث خطأ في الاتصال بالسيرفر أثناء محاولة الحذف', 'error');
     }
   };

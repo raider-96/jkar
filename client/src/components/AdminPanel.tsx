@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { UserAccount, Question, Difficulty, ChallengeType } from '../types';
+import { UserAccount, Question, Difficulty } from '../types';
 import { UserPlus, UserX, UserCheck, Shield, ArrowLeft, PlusCircle, Trash2, List } from 'lucide-react';
 import { CATEGORIES } from '../data/questions';
 
@@ -24,11 +23,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
 
+  // تهيئة الحقول الجديدة بدون خانة نوع التحدي، ومع دعم صورة السؤال وصورة الجواب
   const [newQ, setNewQ] = useState<Partial<Question>>({
     category: CATEGORIES[0],
     difficulty: 'easy',
-    type: 'text',
-    points: 100
+    points: 100,
+    questionImage: '', // حقل صورة السؤال
+    answerImage: ''    // حقل صورة الجواب التوضيحية
   });
 
   const handleAddUser = (e: React.FormEvent) => {
@@ -49,12 +50,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         points: newQ.difficulty === 'easy' ? 100 : newQ.difficulty === 'medium' ? 200 : 400
       };
       onAddQuestion(q);
-      setNewQ({ ...newQ, question: '', answer: '', image: '' });
+      // تفريغ الحقول والصور بعد الإضافة مباشرة
+      setNewQ({ 
+        category: newQ.category, 
+        difficulty: newQ.difficulty, 
+        points: 100, 
+        question: '', 
+        answer: '', 
+        questionImage: '', 
+        answerImage: '' 
+      });
     }
   };
 
+  // دالة مساعدة لرفع ومعالجة الصور وتحويلها إلى Base64
+  const handleImageUpload = (file: File, field: 'questionImage' | 'answerImage') => {
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const base64 = readerEvent.target?.result as string;
+      setNewQ(prev => ({ ...prev, [field]: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-6 rtl pb-24">
+    <div className="max-w-6xl mx-auto p-6 rtl pb-24 text-right">
       <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
         <h1 className="text-4xl font-black text-black flex items-center gap-3">
           <Shield className="text-black" size={40} /> لوحة الإدارة
@@ -175,47 +195,65 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                     <option value="hard">صعب (400)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* قسم رفع الصور المطور: صورة السؤال وصورة الجواب */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 1. حقل رفع صورة السؤال */}
                 <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">نوع التحدي</label>
-                  <select 
-                    value={newQ.type}
-                    onChange={(e) => setNewQ({...newQ, type: e.target.value as ChallengeType})}
-                    className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]"
-                  >
-                    <option value="text">سؤال نصي</option>
-                    <option value="image">تخمين صورة</option>
-                    <option value="act">تمثيل</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">رفع صورة من الجهاز (اختياري)</label>
+                  <label className="text-sm font-black mr-2">رفع صورة السؤال / الباركود (اختياري)</label>
                   <div className="flex flex-col gap-3">
                     <label className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705]/40 font-black cursor-pointer hover:border-[#F7C705] transition-all flex items-center justify-center gap-3">
                       <PlusCircle size={20} />
-                      {newQ.image ? 'تم اختيار صورة' : 'اختر صورة من جهازك'}
+                      {newQ.questionImage ? '📸 تم اختيار صورة السؤال' : 'اختر صورة السؤال'}
                       <input 
                         type="file" 
                         accept="image/*" 
                         className="hidden" 
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (readerEvent) => {
-                              const base64 = readerEvent.target?.result as string;
-                              setNewQ({...newQ, image: base64});
-                            };
-                            reader.readAsDataURL(file);
-                          }
+                          if (file) handleImageUpload(file, 'questionImage');
                         }}
                       />
                     </label>
-                    {newQ.image && (
+                    {newQ.questionImage && (
                       <div className="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-[#F7C705]">
-                        <img src={newQ.image} className="w-full h-full object-cover" alt="Preview" />
+                        <img src={newQ.questionImage} className="w-full h-full object-contain bg-black/40" alt="Question Preview" />
                         <button 
                           type="button"
-                          onClick={() => setNewQ({...newQ, image: ''})}
+                          onClick={() => setNewQ({...newQ, questionImage: ''})}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. حقل رفع صورة الجواب */}
+                <div className="space-y-2">
+                  <label className="text-sm font-black mr-2">رفع صورة الجواب التوضيحية (اختياري)</label>
+                  <div className="flex flex-col gap-3">
+                    <label className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705]/40 font-black cursor-pointer hover:border-[#F7C705] transition-all flex items-center justify-center gap-3">
+                      <PlusCircle size={20} />
+                      {newQ.answerImage ? '📸 تم اختيار صورة الجواب' : 'اختر صورة الجواب'}
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(file, 'answerImage');
+                        }}
+                      />
+                    </label>
+                    {newQ.answerImage && (
+                      <div className="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-emerald-500">
+                        <img src={newQ.answerImage} className="w-full h-full object-contain bg-black/40" alt="Answer Preview" />
+                        <button 
+                          type="button"
+                          onClick={() => setNewQ({...newQ, answerImage: ''})}
                           className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
                         >
                           <Trash2 size={16} />
@@ -225,6 +263,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* نص التحدي */}
               <div className="space-y-2">
                 <label className="text-sm font-black mr-2">نص التحدي / السؤال</label>
                 <textarea
@@ -235,6 +275,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   required
                 />
               </div>
+
+              {/* الإجابة الصحيحة */}
               <div className="space-y-2">
                 <label className="text-sm font-black mr-2">الإجابة</label>
                 <input
@@ -246,6 +288,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                   required
                 />
               </div>
+
               <button type="submit" className="w-full bg-[#F7C705] hover:scale-[1.01] text-black px-8 py-5 rounded-[24px] font-black text-xl shadow-xl transition-all">
                 إضافة التحدي للقاعدة
               </button>
@@ -258,23 +301,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
               ({questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length})
             </h2>
             <div className="space-y-4">
-              {questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).reverse().map((q: any) => (
-                <div key={q.id} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm">
-                  <div className="flex-1">
-                    <div className="flex gap-2 mb-2">
-                      <span className="bg-black text-[#F7C705] text-[10px] px-2 py-0.5 rounded font-black">{q.category}</span>
-                      <span className="bg-black/10 text-black text-[10px] px-2 py-0.5 rounded font-black">{q.type === 'act' ? 'تمثيل' : q.type === 'image' ? 'صورة' : 'سؤال'}</span>
+              {questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).reverse().map((q: any) => {
+                const safeId = q._id || q.id;
+                return (
+                  <div key={safeId} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm">
+                    <div className="flex-1">
+                      <div className="flex gap-2 mb-2">
+                        <span className="bg-black text-[#F7C705] text-[10px] px-2 py-0.5 rounded font-black">{q.category}</span>
+                        <span className="bg-black/10 text-black text-[10px] px-2 py-0.5 rounded font-black">
+                          {q.questionImage || q.image ? '📸 يحتوي على صورة' : '📝 نصي'}
+                        </span>
+                      </div>
+                      <p className="text-black font-black">{q.question}</p>
                     </div>
-                    <p className="text-black font-black">{q.question}</p>
+                    <button
+                      onClick={() => onDeleteQuestion(safeId)}
+                      className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4"
+                    >
+                      <Trash2 size={24} />
+                    </button>
                   </div>
-                  <button
-                   onClick={() => onDeleteQuestion((q as any).id || (q as any)._id || q['_id'])}
-                    className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4"
-                  >
-                    <Trash2 size={24} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
