@@ -1,204 +1,190 @@
+
 import React, { useState, useEffect } from 'react';
-import { Timer, CheckCircle, XCircle, Eye, Image as ImageIcon } from 'lucide-react';
+import { Question, HelpType, Team } from '../types';
+import { Timer, CheckCircle, XCircle, Eye, Image as ImageIcon, Play, Pause, RefreshCw, Smartphone, Brain, Bomb, UserPlus, Ghost } from 'lucide-react';
 
 interface QuestionViewProps {
-  question: any; // مرونة تامة لقراءة image أو imageUrl القادمة من السيرفر
-  teams: [string, string];
+  question: Question;
+  teams: [Team, Team];
   currentTurn: 0 | 1;
   onAnswer: (winnerIndex: number | null) => void;
-  initialBonusTime?: number;
-  hasChangeHelpline?: boolean;
-  onSkipQuestion?: () => void;
+  onUseHelp: (teamIdx: number, help: HelpType) => void;
+  onSwitchQuestion: () => void;
 }
 
 const QuestionView: React.FC<QuestionViewProps> = ({ 
-  question, 
-  teams, 
-  currentTurn, 
-  onAnswer,
-  initialBonusTime = 0,
-  hasChangeHelpline = true,
-  onSkipQuestion
+  question, teams, currentTurn, onAnswer, onUseHelp, onSwitchQuestion 
 }) => {
   const [showAnswer, setShowAnswer] = useState(false);
-  
-  // ضبط الوقت (999 تعني وقت مفتوح عند الاتصال بصديق)
-  const [timeLeft, setTimeLeft] = useState(initialBonusTime === 999 ? 999 : 30 + initialBonusTime);
+  const [timeLeft, setTimeLeft] = useState(30);
+  const [isSecondChance, setIsSecondChance] = useState(false);
+  const [activeTeamIdx, setActiveTeamIdx] = useState(currentTurn);
+  const [isPaused, setIsPaused] = useState(false);
 
-  // إعادة ضبط الوقت عند تغيير السؤال
   useEffect(() => {
-    setTimeLeft(initialBonusTime === 999 ? 999 : 30 + initialBonusTime);
-    setShowAnswer(false);
-  }, [initialBonusTime, question]);
-
-  // عداد الوقت التنازلي
-  useEffect(() => {
-    if (timeLeft > 0 && timeLeft !== 999 && !showAnswer) {
+    if (timeLeft > 0 && !showAnswer && !isPaused) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !showAnswer) {
-      setShowAnswer(true);
+    } else if (timeLeft === 0 && !showAnswer && !isSecondChance) {
+      setIsSecondChance(true);
+      setActiveTeamIdx(currentTurn === 0 ? 1 : 0);
+      setTimeLeft(20);
     }
-  }, [timeLeft, showAnswer]);
+  }, [timeLeft, showAnswer, isSecondChance, currentTurn, isPaused]);
 
-  // قراءة رابط الصورة بذكاء سواء كان الحقل باسم image أو imageUrl
-  const rawImage = question.image || question.imageUrl || null;
-  const isImageChallenge = question.category === 'تحدي تخمين الصورة' || !!rawImage;
-
-  const getChallengeIcon = () => {
-    return isImageChallenge ? <ImageIcon size={20} /> : <Timer size={20} />;
+  const useHelp = (teamIdx: number, type: HelpType) => {
+    if (type === 'think') setTimeLeft(60);
+    if (type === 'phone') setIsPaused(true);
+    if (type === 'change') {
+      onSwitchQuestion();
+      setTimeLeft(30);
+      setIsSecondChance(false);
+      setActiveTeamIdx(currentTurn);
+    }
+    onUseHelp(teamIdx, type);
   };
 
-  const getChallengeLabel = () => {
-    return isImageChallenge ? 'تحدي تخمين الصورة' : `سؤال: ${question.category}`;
+  const resumeTime = () => {
+    setIsPaused(false);
+    setTimeLeft(40);
   };
 
- const imageUrl = question.imageUrl 
-  ? (question.imageUrl.startsWith('http') ? question.imageUrl : `${window.location.origin}${question.imageUrl}`) 
-  : null;
-  
+  const helpIcons: Record<HelpType, any> = {
+    think: Brain,
+    phone: Smartphone,
+    destruction: Bomb,
+    change: RefreshCw,
+    thief: Ghost
+  };
+
+  const helpNames: Record<HelpType, string> = {
+    think: 'خل أفكر',
+    phone: 'أريد أخبار',
+    destruction: 'تفليش',
+    change: 'شوفلي غيرة',
+    thief: 'حرامي'
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 md:p-6 rtl select-none">
-      <div className="bg-[#F7C705] border-4 border-black w-full max-w-4xl h-[92vh] rounded-[36px] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden text-black animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md rtl">
+      <div className="bg-[#F7C705] border-8 border-black w-full max-w-4xl max-h-[95vh] rounded-[60px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col animate-in zoom-in-95 duration-300">
         
-        {/* شريط معلومات الوقت والدور العلوي */}
-        <div className="bg-black text-white px-6 py-4 flex justify-between items-center border-b-4 border-black shrink-0">
-          <div className="flex items-center gap-3">
-            <div className={`w-3 h-3 rounded-full ${timeLeft <= 10 && timeLeft !== 999 ? 'bg-red-500 animate-ping' : 'bg-green-500'}`} />
-            <div className="text-lg font-black">
-              {timeLeft === 999 ? '📞 تم تجميد الوقت (اتصال بصديق)' : `⏱️ المتبقي: ${timeLeft} ثانية`}
+        {/* Header */}
+        <div className="px-8 py-6 flex justify-between items-center bg-black text-[#F7C705] shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-[#F7C705] rounded-xl flex items-center justify-center text-black font-black text-xl">
+              {activeTeamIdx + 1}
+            </div>
+            <div>
+              <span className="text-[10px] uppercase font-black opacity-60 block tracking-widest">
+                {isSecondChance ? 'فرصة ذهبية ثانية' : 'دور الفريق'}
+              </span>
+              <span className="text-2xl font-black">{teams[activeTeamIdx].name}</span>
             </div>
           </div>
-          <div className="text-right">
-            <span className="text-[10px] text-[#F7C705] font-bold block opacity-60 leading-none">فريق الدور الحالي</span>
-            <span className="text-lg font-black text-[#F7C705]">{teams[currentTurn]}</span>
+
+          <div className="flex items-center gap-4">
+             {isPaused && (
+               <button 
+                onClick={resumeTime}
+                className="bg-[#F7C705] text-black px-4 py-2 rounded-xl font-black flex items-center gap-2 animate-pulse"
+               >
+                 <Play size={18} /> استمرار (40ث)
+               </button>
+             )}
+             <div className="flex items-center gap-3 bg-[#F7C705]/10 px-6 py-3 rounded-[24px] border border-[#F7C705]/20">
+              {isPaused ? <Pause size={28} /> : <Timer size={28} className={timeLeft <= 5 ? 'text-red-500 animate-pulse' : 'text-[#F7C705]'} />}
+              <span className={`text-4xl font-mono font-black ${timeLeft <= 5 ? 'text-red-500' : 'text-[#F7C705]'}`}>
+                {timeLeft}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* جسم الكرت الداخلي */}
-        <div className="p-6 md:p-8 text-center overflow-y-auto flex-1 flex flex-col items-center gap-4">
+        {/* Scrollable Content */}
+        <div className="p-8 md:p-12 text-center overflow-y-auto custom-scrollbar flex-1">
           
-          {/* أزرار وسائل المساعدة التكتيكية الثلاثة داخل السؤال */}
-          <div className="flex flex-wrap justify-center gap-2 mb-1 shrink-0">
-            <button
-              onClick={() => {
-                if (timeLeft !== 999) {
-                  setTimeLeft(prev => prev + 60);
-                  alert('⏱️ خل افكر: تم تمديد الوقت بـ 60 ثانية إضافية!');
-                }
-              }}
-              disabled={timeLeft === 999 || showAnswer}
-              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white border-2 border-black font-black px-3 py-1.5 rounded-xl text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
-            >
-              ⏱️ خل افكر (+دقيقة)
-            </button>
-
-            <button
-              onClick={() => {
-                setTimeLeft(999);
-                alert('📞 اريد اخابر: تم إيقاف العداد، ناقش صديقك براحتك الآن!');
-              }}
-              disabled={timeLeft === 999 || showAnswer}
-              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-40 text-white border-2 border-black font-black px-3 py-1.5 rounded-xl text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
-            >
-              📞 اريد اخابر
-            </button>
-
-            {onSkipQuestion && (
-              <button
-                onClick={() => {
-                  if (confirm("هل تريد سحب كرت آخر واستبدال هذا السؤال فوراً؟")) {
-                    onSkipQuestion();
-                  }
-                }}
-                disabled={!hasChangeHelpline || showAnswer}
-                className={`text-white border-2 border-black font-black px-3 py-1.5 rounded-xl text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all ${
-                  hasChangeHelpline ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-400 opacity-40 cursor-not-allowed'
-                }`}
-              >
-                🔄 شوفلي غيرة
-              </button>
-            )}
-          </div>
-
-          {/* شارة صنف التحدي والنقاط */}
-          <div className="flex items-center gap-2 bg-black text-[#F7C705] px-5 py-2 rounded-full text-xs font-black shadow-md shrink-0">
-            {getChallengeIcon()}
-            <span>{getChallengeLabel()} • {question.points} نقطة</span>
-          </div>
-
-          {/* عرض صورة التحدي بدون تشويه */}
-          {imageUrl && (
-            <div className="w-full max-w-sm h-48 overflow-hidden rounded-2xl border-4 border-black bg-white shadow-md shrink-0">
-              <img 
-                src={imageUrl} 
-                alt="Challenge View" 
-                className="w-full h-full object-contain p-1"
-                onError={(e) => {
-                  console.error("فشل تحميل مسار الصورة:", imageUrl);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
+          {/* Helps Toolbar */}
+          {!showAnswer && (
+            <div className="flex justify-center gap-3 mb-10 bg-black/5 p-4 rounded-[30px]">
+              {teams[activeTeamIdx].helps.filter(h => !teams[activeTeamIdx].usedHelps.includes(h)).map(helpType => {
+                const Icon = helpIcons[helpType];
+                return (
+                  <button
+                    key={helpType}
+                    onClick={() => useHelp(activeTeamIdx, helpType)}
+                    className="group flex flex-col items-center gap-1 bg-black text-[#F7C705] p-4 rounded-2xl hover:scale-110 transition-all shadow-lg"
+                  >
+                    <Icon size={24} />
+                    <span className="text-[8px] font-black">{helpNames[helpType]}</span>
+                  </button>
+                );
+              })}
+              {teams[activeTeamIdx].helps.filter(h => !teams[activeTeamIdx].usedHelps.includes(h)).length === 0 && (
+                <span className="text-black/20 font-black text-xs uppercase py-2">لا يوجد وسائل مساعدة متاحة</span>
+              )}
             </div>
           )}
 
-          {/* نص السؤال الرئيسي */}
-          <h2 className="text-xl md:text-3xl font-black text-black leading-snug max-w-2xl my-auto px-2">
-            {question.question}
+          <div className="flex flex-col items-center gap-6 mb-10">
+            <div className="bg-black text-[#F7C705] px-8 py-3 rounded-full text-lg font-black shadow-xl">
+               {question.difficulty === 'easy' ? 'سهل' : question.difficulty === 'medium' ? 'متوسط' : 'صعب'} • {question.points} نقطة
+            </div>
+            
+            {(showAnswer ? question.aImage : question.qImage) && (
+              <div className="w-full max-w-lg h-auto max-h-[350px] overflow-hidden rounded-[40px] border-8 border-black shadow-2xl bg-white">
+                <img 
+                  src={showAnswer ? question.aImage : question.qImage} 
+                  alt="Challenge" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+          </div>
+          
+          <h2 className="text-3xl md:text-5xl font-black text-black mb-12 leading-tight">
+            {showAnswer ? question.answer : question.question}
           </h2>
 
-          {/* صندوق عرض الإجابة */}
-          <div className="w-full max-w-xl mt-auto pt-2">
+          <div className="space-y-8 pb-10">
             {!showAnswer ? (
               <button
                 onClick={() => setShowAnswer(true)}
-                className="flex items-center gap-2 mx-auto bg-black hover:bg-black/90 text-[#F7C705] border-2 border-black px-6 py-2.5 rounded-xl font-black text-base shadow-[4px_4px_0px_0px_rgba(0,0,0,0.15)] active:translate-y-0.5 transition-all"
+                className="group flex items-center gap-4 mx-auto bg-black hover:scale-105 text-[#F7C705] px-16 py-8 rounded-[32px] transition-all shadow-2xl"
               >
-                <Eye size={20} />
-                <span>إظهار الإجابة</span>
+                <Eye size={36} />
+                <span className="text-3xl font-black uppercase">إظهار الإجابة</span>
               </button>
             ) : (
-              <div className="bg-black text-[#F7C705] p-4 rounded-2xl border-4 border-black font-black text-xl md:text-2xl relative shadow-lg animate-in fade-in duration-300">
-                <span className="absolute -top-3 right-4 bg-[#F7C705] text-black border-2 border-black text-[10px] px-2 py-0.5 rounded-full font-bold">
-                  الإجابة الصحيحة
-                </span>
-                <p className="tracking-wide select-text">{question.answer}</p>
+              <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
+                <p className="text-black/40 mb-8 font-black uppercase tracking-widest text-sm">تحديد الفريق الفائز</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <button
+                    onClick={() => onAnswer(0)}
+                    className="flex flex-col items-center gap-2 bg-black hover:bg-black/90 text-[#F7C705] font-black py-6 rounded-[32px] shadow-2xl transition-all active:scale-95"
+                  >
+                    <CheckCircle size={32} />
+                    <span className="text-xl">{teams[0].name}</span>
+                  </button>
+                  <button
+                    onClick={() => onAnswer(1)}
+                    className="flex flex-col items-center gap-2 bg-black hover:bg-black/90 text-[#F7C705] font-black py-6 rounded-[32px] shadow-2xl transition-all active:scale-95"
+                  >
+                    <CheckCircle size={32} />
+                    <span className="text-xl">{teams[1].name}</span>
+                  </button>
+                  <button
+                    onClick={() => onAnswer(null)}
+                    className="flex flex-col items-center gap-2 bg-white/40 border-4 border-black/10 text-black/40 font-black py-6 rounded-[32px] transition-all hover:bg-white/60 active:scale-95"
+                  >
+                    <XCircle size={32} />
+                    <span className="text-xl">لا أحد</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
-
-        {/* أزرار التحكيم واحتساب النقاط السفليّة */}
-        <div className="bg-white/95 border-t-4 border-black p-4 flex flex-col sm:flex-row justify-center items-center gap-3 shrink-0">
-          <span className="text-xs font-black opacity-70">من فاز بنقاط الكرت؟</span>
-          
-          <div className="flex flex-wrap justify-center gap-2">
-            <button
-              onClick={() => onAnswer(0)}
-              className="bg-black hover:bg-black/90 text-white font-black px-5 py-2 rounded-xl border-2 border-black flex items-center gap-2 text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
-            >
-              <CheckCircle size={16} className="text-green-400" />
-              {teams[0]}
-            </button>
-
-            <button
-              onClick={() => onAnswer(1)}
-              className="bg-black hover:bg-black/90 text-white font-black px-5 py-2 rounded-xl border-2 border-black flex items-center gap-2 text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
-            >
-              <CheckCircle size={16} className="text-green-400" />
-              {teams[1]}
-            </button>
-
-            <button
-              onClick={() => onAnswer(null)}
-              className="bg-gray-200 hover:bg-gray-300 text-black font-black px-5 py-2 rounded-xl border-2 border-black flex items-center gap-2 text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 transition-all"
-            >
-              <XCircle size={16} className="text-red-500" />
-              تجاوز بدون نقاط
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   );

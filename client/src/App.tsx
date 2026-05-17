@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { GameState, Team, Question, Difficulty, UserAccount } from './types';
+import { GameState, Team, Question, Difficulty, UserAccount, HelpType } from './types';
+import { QUESTIONS } from './data/questions';
 import Login from './components/Login';
 import Setup from './components/Setup';
 import GameBoard from './components/GameBoard';
@@ -9,527 +11,235 @@ import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award, ArrowLeft } from 'lucide-react';
 
-const API_URL = `${window.location.origin}/api`;
+const DEFAULT_USERS: UserAccount[] = [
+  { username: 'admin', password: '123', role: 'admin', isActive: true, createdAt: new Date().toISOString() },
+];
 
 const App: React.FC = () => {
-const [gameState, setGameState] = useState<GameState>({
-  step: 'login',
-  teams: [
-    { name: 'الفريق الأول', score: 0, categories: [], usedHelplines: [] }, // إرسال مصفوفة فارغة هنا
-    { name: 'الفريق الثاني', score: 0, categories: [], usedHelplines: [] }, // وإرسال مصفوفة فارغة هنا
-  ],
-  currentTurn: 0,
-  answeredQuestionIds: [],
-  selectedCategories: [],
-});
+  const [gameState, setGameState] = useState<GameState>(() => {
+    const saved = sessionStorage.getItem('chgar_game_state');
+    return saved ? JSON.parse(saved) : {
+      step: 'login',
+      teams: [
+        { name: 'الفريق الأول', score: 0, categories: [], helps: [], usedHelps: [] },
+        { name: 'الفريق الثاني', score: 0, categories: [], helps: [], usedHelps: [] },
+      ],
+      currentTurn: 0,
+      answeredQuestionIds: [],
+      selectedCategories: [],
+      activeDestruction: null,
+      activeThief: null
+    };
+  });
 
-  const [activeQuestion, setActiveQuestion] = useState<{
-    question: Question;
-    key: string;
-  } | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
+    const saved = sessionStorage.getItem('chgar_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
-  const [allQuestions, setAllQuestions] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserAccount[]>(() => {
+    const saved = localStorage.getItem('chagar_users');
+    return saved ? JSON.parse(saved) : DEFAULT_USERS;
+  });
+
+  const [allQuestions, setAllQuestions] = useState<Question[]>(() => {
+    const saved = localStorage.getItem('chagar_custom_questions');
+    const custom = saved ? JSON.parse(saved) : [];
+    return [...QUESTIONS, ...custom];
+  });
+
+  const [activeQuestion, setActiveQuestion] = useState<{ question: Question; key: string; } | null>(null);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
-  // 🚀 تتبع وسائل المساعدة المستخدمة لكل فريق
-  const [usedHelplines, setUsedHelplines] = useState<{ [key: number]: string[] }>({
-    0: [], 
-    1: [], 
-  });
-
-  // 🚀 تتبع المساعدات النشطة التي تؤثر على التحدي الحالي
-  const [activeEffects, setActiveEffects] = useState<{
-    isStolen: boolean;
-    isDestroyed: boolean;
-    destroyingTeamIdx: number | null;
-    initialBonusTime: number; 
-  }>({
-    isStolen: false,
-    isDestroyed: false,
-    destroyingTeamIdx: null,
-    initialBonusTime: 0
-  });
-
-  useEffect(() => {
-    fetch(`${API_URL}/users`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setUsers(data);
-        else setUsers([]);
-      })
-      .catch(err => {
-        console.error("خطأ في جلب المستخدمين:", err);
-        setUsers([]);
-      });
-
-  fetch(`${API_URL}/questions`)
-  .then(res => res.json())
-  .then(data => {
-    if (Array.isArray(data)) {
-      const processed = data.map((q: any) => {
-        let finalImageUrl = "";
-        if (q.imageUrl) {
-          if (q.imageUrl.startsWith('http://') || q.imageUrl.startsWith('https://')) {
-            finalImageUrl = q.imageUrl;
-          } else {
-            // تنظيف الشرطة المائلة الزائدة لضمان بناء مسار صحيح للصور المحلية
-            const cleanPath = q.imageUrl.startsWith('/') ? q.imageUrl.substring(1) : q.imageUrl;
-            finalImageUrl = `${window.location.origin}/${cleanPath}`;
-          }
-        }
-        return {
-          ...q,
-          imageUrl: finalImageUrl
-        };
-      });
-      setAllQuestions(processed);
-    }
-  })
-  .catch(err => console.error("خطأ في جلب الأسئلة:", err));
-  }, [gameState.step]);
+  useEffect(() => { sessionStorage.setItem('chgar_game_state', JSON.stringify(gameState)); }, [gameState]);
+  useEffect(() => { if (currentUser) sessionStorage.setItem('chgar_current_user', JSON.stringify(currentUser)); else sessionStorage.removeItem('chgar_current_user'); }, [currentUser]);
+  useEffect(() => { localStorage.setItem('chagar_users', JSON.stringify(users)); }, [users]);
+  useEffect(() => { const saved = localStorage.getItem('chagar_used_questions'); if (saved) setPermanentlyUsedIds(JSON.parse(saved)); }, []);
 
   const handleLogin = (username: string, password?: string) => {
-    const trimmedUsername = username.trim().toLowerCase();
-    if (trimmedUsername === 'admin') {
-      if (password === '123' || !password || password === '...') {
-        const adminUser: any = { _id: 'admin-local-id', username: 'admin', role: 'admin', isActive: true };
-        setCurrentUser(adminUser);
-        setGameState((prev: any) => ({ ...prev, step: 'setup' }));
-        return; 
-      }
-    }
-    const safeUsers = Array.isArray(users) ? users : [];
-    const user = safeUsers.find((u: any) => u.username.toLowerCase() === trimmedUsername);
+    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
     if (user) {
-      if (!user.isActive) {
-        alert('هذا الحساب معطل حالياً من قِبل المشرف');
-        return;
-      }
+      if (!user.isActive) return alert('هذا اليوزر معطل حالياً');
+      if (user.password && user.password !== password) return alert('الرمز السري غير صحيح');
       setCurrentUser(user);
-      setGameState((prev: any) => ({ ...prev, step: 'setup' }));
-    } else {
-      alert('اسم المستخدم غير موجود، يرجى مراجعة الأدمن لتسجيلك!');
-    }
+      setGameState(prev => ({ ...prev, step: 'setup' }));
+    } else alert('اليوزر غير موجود');
   };
 
-  const handleAddUser = async (username: string, password?: string) => {
-    try {
-      const response = await fetch(`${API_URL}/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim(), password: password || "123", role: 'user', isActive: true })
-      });
-      if (response.ok) {
-        const newUser = await response.json();
-        setUsers(prev => [...prev, newUser]);
-        alert('تم إضافة المستخدم بنجاح!');
-      } else {
-        const errData = await response.json();
-        alert(errData.error || 'فشل السيرفر في إضافة المستخدم');
-      }
-    } catch (err) {
-      console.error("خطأ أثناء إضافة المستخدم:", err);
-    }
+  const handleAddUser = (username: string, password?: string) => {
+    if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) return;
+    setUsers([...users, { username, password, role: 'user', isActive: true, createdAt: new Date().toISOString() }]);
   };
 
-  const handleToggleUser = async (username: string) => {
-    try {
-      const response = await fetch(`${API_URL}/users/${username}/toggle`, { method: 'PATCH' });
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUsers(prev => (Array.isArray(prev) ? prev : []).map(u => u.username === username ? updatedUser : u));
-      }
-    } catch (err) {
-      console.error("خطأ أثناء تعديل حالة الحساب:", err);
-    }
-  };
+  const handleToggleUser = (username: string) => setUsers(users.map(u => u.username === username ? { ...u, isActive: !u.isActive } : u));
+  const handleDeleteUser = (username: string) => setUsers(users.filter(u => u.username !== username));
 
-  const handleDeleteUser = async (username: string) => {
-    try {
-      const response = await fetch(`${API_URL}/users/${username}`, { method: 'DELETE' });
-      if (response.ok) {
-        setUsers(prev => (Array.isArray(prev) ? prev : []).filter(u => u.username !== username));
-      }
-    } catch (err) {
-      console.error("خطأ أثناء حذف المستخدم:", err);
-    }
-  };
-
-  const handleAddQuestion = async (q: Question) => {
-    try {
-      const questionData = {
-        id: q.id || Date.now().toString(),
-        question: q.question,
-        options: q.options || [],
-        answer: q.answer,
-        category: q.category,
-        difficulty: q.difficulty,
-        points: Number(q.points) || 10
-      };
-      const response = await fetch(`${API_URL}/questions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(questionData)
-      });
-      if (response.ok) {
-        const newQuestion = await response.json();
-        setAllQuestions(prev => [...prev, newQuestion]);
-        alert('تم إضافة السؤال بنجاح إلى قاعدة البيانات!');
-      } else {
-        const errData = await response.json();
-        alert(errData.error || 'فشلت إضافة السؤال، راجع الحقول المطلوبة');
-      }
-    } catch (err) {
-      console.error("خطأ في إضافة السؤال للسيرفر:", err);
-    }
+  const handleAddQuestion = (q: Question) => {
+    const updated = [...allQuestions, q];
+    setAllQuestions(updated);
+    localStorage.setItem('chagar_custom_questions', JSON.stringify(updated.filter(item => item.id.startsWith('custom-'))));
   };
 
   const handleDeleteQuestion = (id: string) => {
-    const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    const updated = safeQuestions.filter(q => q.id !== id);
+    const updated = allQuestions.filter(q => q.id !== id);
     setAllQuestions(updated);
+    localStorage.setItem('chagar_custom_questions', JSON.stringify(updated.filter(item => item.id.startsWith('custom-'))));
   };
 
-const handleSetupGame = (teams: [string, string], categories: string[]) => {
-  setGameState({
-    step: 'game', // أو 'board' حسب الـ Type المعتمد في ملف الخصائص لديك
-    teams: [
-      { 
-        name: teams[0], 
-        score: 0, 
-        categories: categories.slice(0, 3), 
-        usedHelplines: [] // تهيئة المساعدات للفريق الأول
-      },
-      { 
-        name: teams[1], 
-        score: 0, 
-        categories: categories.slice(3, 6), 
-        usedHelplines: [] // تهيئة المساعدات للفريق الثاني
+  const handleExportData = () => {
+    const data = { users: users.filter(u => u.role !== 'admin'), questions: allQuestions.filter(q => q.id.startsWith('custom-')) };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `chgar_backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+  };
+
+  const handleImportData = (jsonString: string) => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.users) {
+        const existing = users.map(u => u.username.toLowerCase());
+        setUsers([...users, ...data.users.filter((u: any) => !existing.includes(u.username.toLowerCase()))]);
       }
-    ],
-    selectedCategories: categories,
-    answeredQuestionIds: [],
-    currentTurn: 0,
-  });
-
-  // إذا كنت تستخدم state منفصل للمساعدات تذكر تحديثه بالتوازي أو دمجه بالـ gameState
-  // setUsedHelplines({ 0: [], 1: [] }); 
-};
-  const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
-    const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    const available = safeQuestions.filter(q => 
-      q.category === category && 
-      q.difficulty === difficulty && 
-      !permanentlyUsedIds.includes(q.id)
-    );
-
-    let chosenQuestion: Question;
-    if (available.length === 0) {
-      const resetAvailable = safeQuestions.filter(q => q.category === category && q.difficulty === difficulty);
-      if (resetAvailable.length === 0) {
-        alert("لا توجد أسئلة متوفرة في هذا القسم حالياً!");
-        return;
+      if (data.questions) {
+        const existingIds = allQuestions.map(q => q.id);
+        const newQs = data.questions.filter((q: any) => !existingIds.includes(q.id));
+        const updated = [...allQuestions, ...newQs];
+        setAllQuestions(updated);
+        localStorage.setItem('chagar_custom_questions', JSON.stringify(updated.filter(q => q.id.startsWith('custom-'))));
       }
-      chosenQuestion = resetAvailable[Math.floor(Math.random() * resetAvailable.length)];
-    } else {
-      chosenQuestion = available[Math.floor(Math.random() * available.length)];
-    }
+      alert('تم الاستيراد!');
+    } catch (err) { alert('خطأ في الملف!'); }
+  };
 
-    const prefix = `${category}-${difficulty}`;
-    const instance1 = `${prefix}-1`;
-    const instance2 = `${prefix}-2`;
-    const slotKey = gameState.answeredQuestionIds.includes(instance1) ? instance2 : instance1;
-
-    setActiveQuestion({
-      question: chosenQuestion,
-      key: slotKey
+  const handleStartGame = (t1: string, t2: string, cats: string[], t1Helps: HelpType[], t2Helps: HelpType[]) => {
+    setGameState({
+      ...gameState,
+      step: 'game',
+      teams: [
+        { name: t1, score: 0, categories: cats.slice(0, 3), helps: t1Helps, usedHelps: [] },
+        { name: t2, score: 0, categories: cats.slice(3, 6), helps: t2Helps, usedHelps: [] },
+      ],
+      selectedCategories: cats,
+      answeredQuestionIds: [],
     });
   };
 
-  const handleAdjustScore = (teamIdx: number, amount: number) => {
+  const handleUseHelp = (teamIdx: number, type: HelpType) => {
     const newTeams = [...gameState.teams] as [Team, Team];
-    newTeams[teamIdx].score += amount;
-    setGameState(prev => ({ ...prev, teams: newTeams }));
+    newTeams[teamIdx].usedHelps.push(type);
+    let updates: any = { teams: newTeams };
+    if (type === 'destruction') updates.activeDestruction = teamIdx;
+    if (type === 'thief') updates.activeThief = teamIdx;
+    setGameState(prev => ({ ...prev, ...updates }));
   };
 
-  const handleUseHelpline = (teamIdx: number, key: string) => {
-    // تم زيادة الحد الأقصى إلى 5 ليتسع لوسيلة التبديل الخامسة بنجاح وبدون حظر الكرت
-    if (usedHelplines[teamIdx].length >= 5) {
-      alert("❌ لقد استهلك هذا الفريق الحد الأقصى من وسائل المساعدة!");
-      return;
-    }
-    if (usedHelplines[teamIdx].includes(key)) {
-      alert("❌ تم استخدام هذه الوسيلة مسبقاً!");
-      return;
-    }
-
-    setUsedHelplines(prev => ({
-      ...prev,
-      [teamIdx]: [...prev[teamIdx], key]
-    }));
-
-    if (key === 'add_minute') {
-      setActiveEffects(prev => ({ ...prev, initialBonusTime: 60 }));
-      alert("⏱️ تم تفعيل (خل افكر): سيتم إضافة دقيقة كاملة للوقت عند فتح السؤال التالي!");
-    } else if (key === 'call_friend') {
-      setActiveEffects(prev => ({ ...prev, initialBonusTime: 999 }));
-      alert("📞 تم تفعيل (اريد اخابر): سيتم تجميد الوقت تماماً في السؤال التالي للنقاش!");
-    } else if (key === 'steal_question') {
-      setActiveEffects(prev => ({ ...prev, isStolen: true }));
-      setGameState(prev => ({ ...prev, currentTurn: teamIdx as 0 | 1 }));
-      alert(`🥷 تم تفعيل (جرامي): الدور تحول الآن لفريق [${gameState.teams[teamIdx].name}] لسرقة السؤال القادم!`);
-    } else if (key === 'destroy') {
-      setActiveEffects(prev => ({ ...prev, isDestroyed: true, destroyingTeamIdx: teamIdx }));
-      alert(`💥 تم تفعيل (تفليش): إذا أجاب فريق [${gameState.teams[teamIdx].name}] صحيحاً، سيكسب النقاط وتُخصم من الخصم!`);
-    }
-  };
-
-  const handleSkipQuestion = () => {
+  const handleSwitchQuestion = () => {
     if (!activeQuestion) return;
-
-    const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-    const sameCategory = safeQuestions.filter(q => 
-      q.category === activeQuestion.question.category &&
-      q.difficulty === activeQuestion.question.difficulty &&
-      q.id !== activeQuestion.question.id
-    );
-
-    if (sameCategory.length === 0) {
-      alert("⚠️ لا يوجد سؤال بديل من نفس الصنف والصعوبة بداخل قاعدة البيانات!");
-      return;
-    }
-
-    const nextQ = sameCategory[Math.floor(Math.random() * sameCategory.length)];
-    setActiveQuestion(prev => prev ? { ...prev, question: nextQ } : null);
-    
-    setUsedHelplines(prev => ({
-      ...prev,
-      [gameState.currentTurn]: [...prev[gameState.currentTurn], 'change_question']
-    }));
+    const { category: cat, difficulty: diff, id } = activeQuestion.question;
+    const avail = allQuestions.filter(q => q.category === cat && q.difficulty === diff && !permanentlyUsedIds.includes(q.id) && q.id !== id);
+    if (avail.length > 0) setActiveQuestion({ ...activeQuestion, question: avail[Math.floor(Math.random() * avail.length)] });
   };
 
-  const handleAnswer = (winnerIndex: number | null) => {
-    if (!activeQuestion) return;
+  const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
+    const targetIdx = gameState.activeThief !== null ? gameState.activeThief : gameState.currentTurn;
+    const avail = allQuestions.filter(q => q.category === category && q.difficulty === difficulty && !permanentlyUsedIds.includes(q.id));
+    const chosen = avail.length > 0 ? avail[Math.floor(Math.random() * avail.length)] : allQuestions.filter(q => q.category === category && q.difficulty === difficulty)[0];
+    const prefix = `${category}-${difficulty}`;
+    const slot = gameState.answeredQuestionIds.includes(`${prefix}-1`) ? `${prefix}-2` : `${prefix}-1`;
+    setActiveQuestion({ question: chosen, key: slot });
+    if (gameState.activeThief !== null) setGameState(prev => ({ ...prev, activeThief: null }));
+  };
 
+  const handleAnswer = (winnerIdx: number | null) => {
+    if (!activeQuestion) return;
     const newTeams = [...gameState.teams] as [Team, Team];
-    const points = activeQuestion.question.points;
-
-    if (winnerIndex !== null) {
-      if (activeEffects.isDestroyed && activeEffects.destroyingTeamIdx === winnerIndex) {
-        const opponentIndex = winnerIndex === 0 ? 1 : 0;
-        newTeams[winnerIndex].score += points;
-        newTeams[opponentIndex].score = Math.max(0, newTeams[opponentIndex].score - points);
-      } else {
-        newTeams[winnerIndex].score += points;
+    if (winnerIdx !== null) {
+      newTeams[winnerIdx].score += activeQuestion.question.points;
+      if (gameState.activeDestruction !== null && winnerIdx === gameState.activeDestruction) {
+        newTeams[winnerIdx === 0 ? 1 : 0].score -= activeQuestion.question.points;
       }
-
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#F7C705', '#000000', '#ffffff']
-      });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#F7C705', '#000'] });
     }
-
-    const newAnswered = [...gameState.answeredQuestionIds, activeQuestion.key];
-    const questionId = activeQuestion.question.id || (activeQuestion.question as any)._id;
-    const newPermanentUsed = [...permanentlyUsedIds, questionId];    
-    setPermanentlyUsedIds(newPermanentUsed);
-
-    const nextTurn = gameState.currentTurn === 0 ? 1 : 0;
-    const totalSlots = gameState.selectedCategories.length * 3 * 2;
-    const isGameOver = newAnswered.length === totalSlots;
-
-    setActiveEffects({ isStolen: false, isDestroyed: false, destroyingTeamIdx: null, initialBonusTime: 0 });
-
+    const newUsed = [...permanentlyUsedIds, activeQuestion.question.id];
+    setPermanentlyUsedIds(newUsed);
+    localStorage.setItem('chagar_used_questions', JSON.stringify(newUsed));
+    const nextAns = [...gameState.answeredQuestionIds, activeQuestion.key];
     setGameState({
       ...gameState,
       teams: newTeams,
-      currentTurn: nextTurn as 0 | 1,
-      answeredQuestionIds: newAnswered,
-      step: isGameOver ? 'result' : 'game'
+      currentTurn: (gameState.currentTurn === 0 ? 1 : 0) as 0 | 1,
+      answeredQuestionIds: nextAns,
+      activeDestruction: null,
+      step: nextAns.length === (gameState.selectedCategories.length * 6) ? 'result' : 'game'
     });
-
     setActiveQuestion(null);
   };
-
-  const handleReset = () => {
-    setGameState(prev => ({ ...prev, step: 'setup', answeredQuestionIds: [] }));
-    setUsedHelplines({ 0: [], 1: [] });
-  };
-
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setGameState(prev => ({ ...prev, step: 'login' }));
-  };
-
-  const helplineList = [
-    { key: 'add_minute', label: '⏱️ خل افكر' },
-    { key: 'call_friend', label: '📞 اريد اخابر' },
-    { key: 'steal_question', label: '🥷 حرامي' },
-    { key: 'destroy', label: '💥 تفليش' },
-  ];
 
   return (
     <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10">
       <div className="h-6 w-full bg-repeat-x flex overflow-hidden border-b-4 border-black">
-        {Array.from({ length: 50 }).map((_, i) => (
-          <div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />
-        ))}
+        {Array.from({ length: 50 }).map((_, i) => (<div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />))}
       </div>
 
       <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4 border-b-2 border-black/10">
         <div className="flex items-center gap-4">
-          {/* 🚀 إظهار زر لوحة التحكم الذكي والعودة بحرية كاملة للمشرف */}
-          {currentUser?.username.toLowerCase() === 'admin' && gameState.step !== 'admin' && gameState.step !== 'login' && (
-            <button 
-              onClick={() => setGameState(prev => ({ ...prev, step: 'admin' }))}
-              className="flex items-center gap-2 bg-black text-[#F7C705] px-4 py-2 rounded-xl font-bold hover:scale-105 transition-transform shadow-md text-sm"
-            >
-              <ArrowLeft size={16} />
-              لوحة التحكم
-            </button>
-          )}
+          <img src="https://raw.githubusercontent.com/stackblitz/stackblitz-images/main/chgar-logo.png" alt="Chgar" className="w-16 h-16 rounded-[20px] shadow-2xl border-4 border-black" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <div className="flex flex-col">
             <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
             <span className="text-[10px] font-black tracking-[0.2em] opacity-40">CHGAR GAME</span>
           </div>
         </div>
-
-        {currentUser && (
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end">
-              <span className="text-black/60 text-[10px] font-black uppercase tracking-widest">المستخدم الحالي</span>
-              <span className="text-black font-black text-lg">{currentUser.username}</span>
-            </div>
-            <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:scale-110 transition-transform shadow-lg">
-              <LogOut size={22} />
+        
+        <div className="flex items-center gap-4">
+          {gameState.step !== 'login' && (
+            <button onClick={() => setGameState(prev => ({ ...prev, step: prev.step === 'game' ? 'setup' : 'game' }))} className="bg-black/5 p-3 rounded-xl hover:bg-black hover:text-[#F7C705] transition-all">
+              <ArrowLeft size={24} />
             </button>
-          </div>
-        )}
+          )}
+          {currentUser && (
+            <button onClick={() => { setCurrentUser(null); setGameState(prev => ({ ...prev, step: 'login' })); sessionStorage.clear(); }} className="bg-black text-[#F7C705] p-3 rounded-xl shadow-lg">
+              <LogOut size={24} />
+            </button>
+          )}
+        </div>
       </nav>
 
-      <main className="container mx-auto p-4 md:p-6 max-w-7xl">
+      <main className="relative z-10">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
-        
-        {gameState.step === 'admin' && (
-          <AdminPanel 
-            users={Array.isArray(users) ? users : []} 
-            onAddUser={handleAddUser} 
-            onDeleteUser={handleDeleteUser}
-            onToggleUser={handleToggleUser} 
-            questions={Array.isArray(allQuestions) ? allQuestions : []}
-            onAddQuestion={handleAddQuestion}
-            onDeleteQuestion={handleDeleteQuestion}
-            onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} 
-          />
-        )}
-        
-    {gameState.step === 'setup' && (
-  <Setup
-    onSetupComplete={handleSetupGame}
-    allQuestions={allQuestions}
-    isAdmin={currentUser?.role === 'admin'}
-    onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))}
-  />
-)}
-        
+        {gameState.step === 'admin' && <AdminPanel users={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} onToggleUser={handleToggleUser} questions={allQuestions} onAddQuestion={handleAddQuestion} onDeleteQuestion={handleDeleteQuestion} onExportData={handleExportData} onImportData={handleImportData} onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} />}
+        {gameState.step === 'setup' && <Setup onStart={handleStartGame} isAdmin={currentUser?.role === 'admin'} onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))} allQuestions={allQuestions} />}
         {gameState.step === 'game' && (
-          <div className="space-y-6 animate-in fade-in duration-700 max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rtl text-right bg-black/5 p-4 rounded-[32px] border-4 border-black/10">
-              {[0, 1].map((teamIdx) => (
-                <div key={teamIdx} className={`p-4 rounded-[24px] bg-white border-4 border-black ${gameState.currentTurn === teamIdx ? 'ring-4 ring-black ring-offset-2' : 'opacity-80'}`}>
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-black text-lg text-black">وسائل مساعدة {gameState.teams[teamIdx].name}</h4>
-                    <span className="text-xs bg-black text-[#F7C705] px-3 py-1 rounded-full font-bold">
-                      المستخدم: {usedHelplines[teamIdx].filter(k => k !== 'change_question').length} / 4
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {helplineList.map((help) => {
-                      const isUsed = usedHelplines[teamIdx].includes(help.key);
-                      const isMaxed = usedHelplines[teamIdx].filter(k => k !== 'change_question').length >= 4 && !isUsed;
-                      return (
-                        <button
-                          key={help.key}
-                          disabled={isUsed || isMaxed}
-                          onClick={() => handleUseHelpline(teamIdx, help.key)}
-                          className={`px-3 py-1.5 rounded-xl font-black text-xs transition-all border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 ${
-                            isUsed 
-                              ? 'bg-red-200 text-red-700 line-through border-red-300 shadow-none' 
-                              : isMaxed 
-                                ? 'bg-gray-200 text-gray-400 border-gray-300 shadow-none cursor-not-allowed'
-                                : 'bg-[#F7C705] hover:bg-black hover:text-[#F7C705]'
-                          }`}
-                        >
-                          {help.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <ScoreBoard 
-              teams={gameState.teams} 
-              currentTurn={gameState.currentTurn} 
-              onAdjustScore={handleAdjustScore}
-            />
-            <GameBoard 
-              gameState={gameState} 
-              onSelectQuestion={handleSelectQuestion}
-              permanentlyUsedIds={permanentlyUsedIds}
-              questions={Array.isArray(allQuestions) ? allQuestions : []}
-            />
+          <div className="space-y-8 animate-in fade-in duration-700">
+            <ScoreBoard teams={gameState.teams} currentTurn={gameState.currentTurn} onAdjustScore={(idx, amt) => { const nt = [...gameState.teams] as [Team, Team]; nt[idx].score += amt; setGameState(prev => ({ ...prev, teams: nt })); }} />
+            <GameBoard gameState={gameState} onSelectQuestion={handleSelectQuestion} permanentlyUsedIds={permanentlyUsedIds} questions={allQuestions} />
           </div>
         )}
-
         {gameState.step === 'result' && (
-          <div className="max-w-2xl mx-auto mt-20 p-10 bg-slate-900 rounded-3xl border-2 border-indigo-500/50 shadow-2xl text-center rtl text-white">
-            <Award size={80} className="mx-auto text-yellow-400 mb-6" />
-            <h2 className="text-4xl font-black mb-2">انتهت اللعبة!</h2>
-            <p className="text-slate-400 mb-8">النتائج النهائية للتحدي</p>
-            
-            <div className="flex justify-between items-center mb-12">
-              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[0].score > gameState.teams[1].score ? 'bg-indigo-600 ring-4 ring-indigo-400/30' : 'bg-slate-800'}`}>
-                <h3 className="font-bold mb-2">{gameState.teams[0].name}</h3>
-                <p className="text-4xl font-black">{gameState.teams[0].score}</p>
+          <div className="max-w-2xl mx-auto mt-20 p-10 bg-black text-[#F7C705] rounded-[60px] shadow-2xl text-center rtl border-8 border-black/20">
+            <Award size={100} className="mx-auto mb-8" />
+            <h2 className="text-6xl font-black mb-12">انتهت اللعبة!</h2>
+            <div className="flex justify-around items-center mb-16">
+              <div className="text-center">
+                <p className="text-xs uppercase font-black opacity-40 mb-2">{gameState.teams[0].name}</p>
+                <p className="text-6xl font-black">{gameState.teams[0].score}</p>
               </div>
-              <div className="px-6 font-black text-2xl text-slate-500">VS</div>
-              <div className={`p-6 rounded-2xl flex-1 ${gameState.teams[1].score > gameState.teams[0].score ? 'bg-indigo-600 ring-4 ring-indigo-400/30' : 'bg-slate-800'}`}>
-                <h3 className="font-bold mb-2">{gameState.teams[1].name}</h3>
-                <p className="text-4xl font-black">{gameState.teams[1].score}</p>
+              <div className="h-20 w-1 bg-[#F7C705]/20 rounded-full" />
+              <div className="text-center">
+                <p className="text-xs uppercase font-black opacity-40 mb-2">{gameState.teams[1].name}</p>
+                <p className="text-6xl font-black">{gameState.teams[1].score}</p>
               </div>
             </div>
-
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-2 mx-auto bg-white text-indigo-950 px-10 py-4 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl"
-            >
-              <RotateCcw /> لعبة جديدة
+            <button onClick={() => setGameState(prev => ({ ...prev, step: 'setup', answeredQuestionIds: [] }))} className="bg-[#F7C705] text-black px-12 py-6 rounded-[30px] font-black text-2xl flex items-center justify-center gap-4 mx-auto hover:scale-105 transition-all">
+              <RotateCcw size={32} /> تحدي جديد
             </button>
           </div>
         )}
       </main>
 
-      {activeQuestion && (
-        <QuestionView
-          question={activeQuestion.question}
-          teams={[gameState.teams[0].name, gameState.teams[1].name]}
-          currentTurn={gameState.currentTurn}
-          onAnswer={(winnerIndex) => handleAnswer(winnerIndex)}
-          initialBonusTime={activeEffects.initialBonusTime || 0} 
-          hasChangeHelpline={!usedHelplines[gameState.currentTurn]?.includes('change_question')}
-          onSkipQuestion={() => handleSkipQuestion()}
-        />
-      )}
-
-      <footer className="relative z-10 mt-auto py-8 text-center text-slate-600 text-sm">
-        <p>© {new Date().getFullYear()} چگار - منصة الألعاب الجماعية</p>
-      </footer>
+      {activeQuestion && <QuestionView question={activeQuestion.question} teams={gameState.teams} currentTurn={gameState.currentTurn} onAnswer={handleAnswer} onUseHelp={handleUseHelp} onSwitchQuestion={handleSwitchQuestion} />}
     </div>
   );
 };

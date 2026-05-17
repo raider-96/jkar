@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { GameState, Difficulty, Question } from '../types';
@@ -41,7 +42,7 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, perm
                     const questionKey = `${catName}-${diff.value}-${num}`;
                     const isDone = gameState.answeredQuestionIds.includes(questionKey);
 
-                       return (
+                    return (
                       <motion.button
                         key={questionKey}
                         whileHover={!isDone ? { scale: 1.05 } : {}}
@@ -62,11 +63,11 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, perm
                           <>
                             <span>{diff.points}</span>
                             <span className="text-[10px] opacity-60 font-normal">{diff.label}</span>
-                          </>
-                        )}
+                        </>
+                      )}
                     </motion.button>
-                    );
-                  })}
+                  );
+                })}
                 </div>
               ))}
             </div>

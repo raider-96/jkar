@@ -1,9 +1,12 @@
+
 import React, { useState } from 'react';
 import { UserAccount, Question, Difficulty } from '../types';
-import { UserPlus, UserX, UserCheck, Shield, ArrowLeft, PlusCircle, Trash2, List } from 'lucide-react';
+import { UserPlus, UserX, UserCheck, Shield, ArrowLeft, PlusCircle, Trash2, List, Download, Upload, Image as ImageIcon, CheckCircle } from 'lucide-react';
 import { CATEGORIES } from '../data/questions';
 
 interface AdminPanelProps {
+  onImportData: (data: string) => void;
+  onExportData: () => void;
   users: UserAccount[];
   onAddUser: (username: string, password?: string) => void;
   onDeleteUser: (username: string) => void;
@@ -17,29 +20,30 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = ({ 
   users, onAddUser, onDeleteUser, onToggleUser, 
   questions, onAddQuestion, onDeleteQuestion, 
+  onImportData, onExportData,
   onBack 
 }) => {
   const [tab, setTab] = useState<'users' | 'challenges'>('users');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [selectedCatFilter, setSelectedCatFilter] = useState<string>(CATEGORIES[0]);
 
-
-  // تهيئة الحقول الجديدة بدون خانة نوع التحدي، ومع دعم صورة السؤال وصورة الجواب
   const [newQ, setNewQ] = useState<Partial<Question>>({
     category: CATEGORIES[0],
     difficulty: 'easy',
-    points: 100,
-    questionImage: '', // حقل صورة السؤال
-    answerImage: ''    // حقل صورة الجواب التوضيحية
+    points: 100
   });
 
-  const handleAddUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newUsername.trim()) {
-      onAddUser(newUsername.trim(), newPassword.trim());
-      setNewUsername('');
-      setNewPassword('');
+  const handleImageUpload = (type: 'q' | 'a', e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (readerEvent) => {
+        const base64 = readerEvent.target?.result as string;
+        if (type === 'q') setNewQ({...newQ, qImage: base64});
+        else setNewQ({...newQ, aImage: base64});
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -52,347 +56,130 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         points: newQ.difficulty === 'easy' ? 100 : newQ.difficulty === 'medium' ? 200 : 400
       };
       onAddQuestion(q);
-      // تفريغ الحقول والصور بعد الإضافة مباشرة
-      setNewQ({ 
-        category: newQ.category, 
-        difficulty: newQ.difficulty, 
-        points: 100, 
-        question: '', 
-        answer: '', 
-        questionImage: '', 
-        answerImage: '' 
-      });
+      setNewQ({ ...newQ, question: '', answer: '', qImage: '', aImage: '' });
+      alert('تمت إضافة التحدي!');
     }
   };
 
-  // دالة مساعدة لرفع ومعالجة الصور وتحويلها إلى Base64
-  const handleImageUpload = (file: File, field: 'questionImage' | 'answerImage') => {
-    const reader = new FileReader();
-    reader.onload = (readerEvent) => {
-      const base64 = readerEvent.target?.result as string;
-      setNewQ(prev => ({ ...prev, [field]: base64 }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-return (
-    <div className="max-w-6xl mx-auto p-6 rtl pb-24 text-right">
-      {/* الهيدر العلوي وأزرار التنقل */}
-      <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-        <h1 className="text-4xl font-black text-black flex items-center gap-3">
-          <Shield className="text-black" size={40} /> لوحة الإدارة
-        </h1>
-        <div className="flex gap-2 bg-black/5 p-2 rounded-2xl">
-          <button 
-            onClick={() => setTab('users')}
-            className={`px-6 py-2 rounded-xl font-black transition-all ${tab === 'users' ? 'bg-black text-[#F7C705]' : 'text-black/60'}`}
-          >
-            المستخدمين
-          </button>
-          <button 
-            onClick={() => setTab('challenges')}
-            className={`px-6 py-2 rounded-xl font-black transition-all ${tab === 'challenges' ? 'bg-black text-[#F7C705]' : 'text-black/60'}`}
-          >
-            التحديات
-          </button>
+  return (
+    <div className="max-w-7xl mx-auto p-6 rtl pb-24">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+        <div className="flex items-center gap-4">
+           <div className="bg-black text-[#F7C705] p-3 rounded-2xl shadow-xl border-2 border-[#F7C705]/20">
+             <Shield size={32} />
+           </div>
+           <h1 className="text-4xl font-black text-black tracking-tighter">لوحة الإدارة</h1>
         </div>
-        <button onClick={onBack} className="flex items-center gap-2 bg-black text-[#F7C705] px-6 py-2 rounded-xl font-black hover:scale-105 transition-all">
-          <ArrowLeft size={20} /> العودة للعبة
-        </button>
+        
+        <div className="flex gap-2 bg-black/5 p-2 rounded-3xl">
+          <button onClick={() => setTab('users')} className={`px-8 py-3 rounded-2xl font-black transition-all ${tab === 'users' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>المستخدمين</button>
+          <button onClick={() => setTab('challenges')} className={`px-8 py-3 rounded-2xl font-black transition-all ${tab === 'challenges' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>التحديات</button>
+        </div>
+
+        <div className="flex gap-3">
+          <button onClick={onExportData} className="bg-white border-4 border-black text-black px-6 py-3 rounded-2xl font-black hover:bg-black hover:text-[#F7C705] transition-all flex items-center gap-2"><Download size={20} />تصدير</button>
+          <button onClick={onBack} className="bg-black text-[#F7C705] px-8 py-3 rounded-2xl font-black hover:scale-105 transition-all shadow-xl flex items-center gap-2"><ArrowLeft size={20} />عودة</button>
+        </div>
       </div>
 
-      {/* 🔄 تبديل الواجهات بناءً على التبويب النشط */}
       {tab === 'users' ? (
-        /* 👥 أولاً: واجهة إدارة المستخدمين */
-        <div className="space-y-10">
-          <div className="bg-black text-[#F7C705] rounded-[40px] p-10 shadow-2xl border-4 border-black/5">
-            <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-              <UserPlus className="text-[#F7C705]" /> إضافة مستخدم جديد
-            </h2>
-            <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                className="bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-8 py-5 text-[#F7C705] text-xl font-black outline-none focus:border-[#F7C705] transition-all"
-                placeholder="اسم المستخدم"
-                required
-              />
-              <input
-                type="text"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-8 py-5 text-[#F7C705] text-xl font-black outline-none focus:border-[#F7C705] transition-all"
-                placeholder="الرمز السري"
-                required
-              />
-              <button type="submit" className="bg-[#F7C705] hover:scale-105 text-black px-8 py-5 rounded-[24px] font-black text-xl shadow-xl transition-all">
-                إنشاء اليوزر
-              </button>
-            </form>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-1 space-y-8">
+             <div className="bg-black text-[#F7C705] rounded-[40px] p-8 shadow-2xl border-4 border-black/5">
+                <h2 className="text-2xl font-black mb-8 flex items-center gap-3"><UserPlus /> إضافة يوزر</h2>
+                <form onSubmit={(e) => { e.preventDefault(); onAddUser(newUsername, newPassword); setNewUsername(''); setNewPassword(''); }} className="space-y-4">
+                   <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]" placeholder="اسم المستخدم" required />
+                   <input type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]" placeholder="الرمز السري" required />
+                   <button type="submit" className="w-full bg-[#F7C705] text-black py-4 rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] transition-all">إنشاء الآن</button>
+                </form>
+             </div>
           </div>
-
-          <div className="bg-black/5 rounded-[48px] p-10 border-4 border-black/5">
-            <h2 className="text-2xl font-black text-black mb-10 flex items-center gap-2">
-              <List size={24} /> قائمة المستخدمين ({users.length})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {users.map((u) => (
-                <div key={u.username} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-center gap-5">
-                    <div className={`w-4 h-4 rounded-full ${u.isActive ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
-                    <div>
-                      <p className="text-black text-xl font-black uppercase tracking-tighter">{u.username}</p>
-                      <p className="text-[10px] text-black/40 font-bold">الرمز: {u.password || 'لا يوجد'}</p>
+          <div className="lg:col-span-2">
+            <div className="bg-black/5 rounded-[50px] p-8 border-4 border-black/5">
+               <h2 className="text-2xl font-black text-black mb-8 flex items-center gap-3"><List /> قائمة اليوزرات ({users.length})</h2>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {users.map(u => (
+                    <div key={u.username} className="bg-white p-6 rounded-[30px] border-4 border-black/5 flex items-center justify-between shadow-sm">
+                       <div className="flex items-center gap-4">
+                          <div className={`w-3 h-3 rounded-full ${u.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <div>
+                             <p className="font-black text-lg leading-none">{u.username}</p>
+                             <p className="text-[10px] text-black/40 font-bold mt-1">الرمز: {u.password}</p>
+                          </div>
+                       </div>
+                       <div className="flex gap-2">
+                          <button onClick={() => onToggleUser(u.username)} className={`p-2.5 rounded-xl transition-all ${u.isActive ? 'bg-amber-50 text-amber-500 hover:bg-amber-500 hover:text-white' : 'bg-green-50 text-green-500 hover:bg-green-500 hover:text-white'}`}>{u.isActive ? <UserX size={20} /> : <UserCheck size={20} />}</button>
+                          {u.role !== 'admin' && <button onClick={() => onDeleteUser(u.username)} className="p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20} /></button>}
+                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => onToggleUser(u.username)}
-                      className={`p-3 rounded-xl transition-all ${u.isActive ? 'text-amber-500 bg-amber-50 hover:bg-amber-500 hover:text-white' : 'text-green-500 bg-green-50 hover:bg-green-500 hover:text-white'}`}
-                      title={u.isActive ? 'تعطيل' : 'تفعيل'}
-                    >
-                      {u.isActive ? <UserX size={24} /> : <UserCheck size={24} />}
-                    </button>
-                    {u.role !== 'admin' && (
-                      <button
-                        onClick={() => onDeleteUser(u.username)}
-                        className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4"
-                        title="حذف"
-                      >
-                        <Trash2 size={24} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  ))}
+               </div>
             </div>
           </div>
         </div>
       ) : (
-        /* 🎯 ثانياً: واجهة إدارة التحديات (صنف التحديات) */
         <div className="space-y-10">
-          <div className="bg-black text-[#F7C705] rounded-[40px] p-10 shadow-2xl border-4 border-black/5">
-            <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
-              <PlusCircle className="text-[#F7C705]" /> إضافة تحدي جديد
-            </h2>
-            <form onSubmit={handleAddQuestion} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">الصنف</label>
-                  <select 
-                    value={newQ.category}
-                    onChange={(e) => setNewQ({...newQ, category: e.target.value})}
-                    className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]"
-                  >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">الصعوبة</label>
-                  <select 
-                    value={newQ.difficulty}
-                    onChange={(e) => setNewQ({...newQ, difficulty: e.target.value as Difficulty})}
-                    className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]"
-                  >
-                    <option value="easy">سهل (100)</option>
-                    <option value="medium">متوسط (200)</option>
-                    <option value="hard">صعب (400)</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* قسم رفع الصور المطور */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">رفع صورة السؤال / الباركود (اختياري)</label>
-                  <div className="flex flex-col gap-3">
-                    <label className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705]/40 font-black cursor-pointer hover:border-[#F7C705] transition-all flex items-center justify-center gap-3">
-                      <PlusCircle size={20} />
-                      {newQ.questionImage ? '📸 تم اختيار صورة السؤال' : 'اختر صورة السؤال'}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(file, 'questionImage');
-                        }}
-                      />
-                    </label>
-                    {newQ.questionImage && (
-                      <div className="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-[#F7C705]">
-                        <img src={newQ.questionImage} className="w-full h-full object-contain bg-black/40" alt="Question Preview" />
-                        <button 
-                          type="button"
-                          onClick={() => setNewQ({...newQ, questionImage: ''})}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-black mr-2">رفع صورة الجواب التوضيحية (اختياري)</label>
-                  <div className="flex flex-col gap-3">
-                    <label className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705]/40 font-black cursor-pointer hover:border-[#F7C705] transition-all flex items-center justify-center gap-3">
-                      <PlusCircle size={20} />
-                      {newQ.answerImage ? '📸 تم اختيار صورة الجواب' : 'اختر صورة الجواب'}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(file, 'answerImage');
-                        }}
-                      />
-                    </label>
-                    {newQ.answerImage && (
-                      <div className="relative w-full h-32 rounded-2xl overflow-hidden border-2 border-emerald-500">
-                        <img src={newQ.answerImage} className="w-full h-full object-contain bg-black/40" alt="Answer Preview" />
-                        <button 
-                          type="button"
-                          onClick={() => setNewQ({...newQ, answerImage: ''})}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* نص التحدي */}
-              <div className="space-y-2">
-                <label className="text-sm font-black mr-2">نص التحدي / السؤال</label>
-                <textarea
-                  value={newQ.question || ''}
-                  onChange={(e) => setNewQ({...newQ, question: e.target.value})}
-                  className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705] h-32"
-                  placeholder="اكتب التحدي هنا..."
-                  required
-                />
-              </div>
-
-              {/* الإجابة الصحيحة */}
-              <div className="space-y-2">
-                <label className="text-sm font-black mr-2">الإجابة</label>
-                <input
-                  type="text"
-                  value={newQ.answer || ''}
-                  onChange={(e) => setNewQ({...newQ, answer: e.target.value})}
-                  className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-[24px] px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]"
-                  placeholder="الإجابة الصحيحة"
-                  required
-                />
-              </div>
-
-              <button type="submit" className="w-full bg-[#F7C705] hover:scale-[1.01] text-black px-8 py-5 rounded-[24px] font-black text-xl shadow-xl transition-all">
-                إضافة التحدي للقاعدة
-              </button>
-            </form>
-          </div>
-
-          {/* 🗂️ حاوية التحديات المضافة الذكية والمنظمة بالأصناف والمجلدات */}
-          <div className="bg-black/5 rounded-[48px] p-10 border-4 border-black/5">
-            {/* الهيدر الديناميكي للقائمة */}
-            <div className="flex items-center justify-between mb-10 rtl">
-              <h2 className="text-2xl font-black text-black flex items-center gap-2">
-                <List size={24} /> التحديات المضافة 
-                ({questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length})
-                {selectedCategory && (
-                  <span className="bg-black text-[#F7C705] text-xs font-black px-3 py-1 rounded-full mr-2">
-                    صنف: {selectedCategory}
-                  </span>
-                )}
-              </h2>
-
-              {selectedCategory && (
-                <button
-                  onClick={() => setSelectedCategory(null)}
-                  className="flex items-center gap-1.5 bg-black text-[#F7C705] font-black px-4 py-2 rounded-2xl text-xs hover:scale-105 transition-all shadow-md"
-                >
-                  <span>🔙 العودة للأصناف</span>
-                </button>
-              )}
-            </div>
-
-            {/* 1️⃣ العرض الأول: عرض المجلدات */}
-            {!selectedCategory ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rtl">
-                {Array.from(
-                  new Set(
-                    questions
-                      .filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id))
-                      .map((q: any) => q.category)
-                  )
-                ).map((cat: string) => {
-                  const count = questions.filter(
-                    (q: any) => q && q.category === cat && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)
-                  ).length;
-                  
-                  return (
-                    <div
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className="bg-white border-4 border-black/10 p-6 rounded-[32px] cursor-pointer hover:border-black/30 hover:-translate-y-1 hover:shadow-lg transition-all flex justify-between items-center group"
-                    >
-                      <div className="flex flex-col text-right">
-                        <span className="font-black text-xl text-black group-hover:text-amber-500 transition-colors">
-                          {cat || "عام / بدون صنف"}
-                        </span>
-                        <span className="text-xs text-gray-500 font-bold mt-1">{count} تحديات مضافة</span>
-                      </div>
-                      <span className="text-3xl group-hover:scale-110 transition-transform">📂</span>
+           <div className="bg-black text-[#F7C705] rounded-[50px] p-10 shadow-2xl">
+              <h2 className="text-2xl font-black mb-10 flex items-center gap-3"><PlusCircle /> إضافة تحدي جديد</h2>
+              <form onSubmit={handleAddQuestion} className="space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black opacity-60 mr-4">الصنف</label>
+                      <select value={newQ.category} onChange={(e) => setNewQ({...newQ, category: e.target.value})} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-3xl px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]">
+                         {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
                     </div>
-                  );
-                })}
+                    <div className="space-y-2">
+                      <label className="text-xs font-black opacity-60 mr-4">المستوى</label>
+                      <select value={newQ.difficulty} onChange={(e) => setNewQ({...newQ, difficulty: e.target.value as Difficulty})} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-3xl px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]">
+                         <option value="easy">سهل (100)</option>
+                         <option value="medium">متوسط (200)</option>
+                         <option value="hard">صعب (400)</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <label className="bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-3xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#F7C705] transition-all">
+                          <ImageIcon className={newQ.qImage ? 'text-green-500' : 'text-[#F7C705]'} />
+                          <span className="text-[10px] font-black text-center">{newQ.qImage ? 'تم رفع صورة السؤال' : 'صورة السؤال'}</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload('q', e)} />
+                       </label>
+                       <label className="bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-3xl p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#F7C705] transition-all">
+                          <CheckCircle className={newQ.aImage ? 'text-green-500' : 'text-[#F7C705]'} />
+                          <span className="text-[10px] font-black text-center">{newQ.aImage ? 'تم رفع صورة الجواب' : 'صورة الجواب'}</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload('a', e)} />
+                       </label>
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <textarea value={newQ.question || ''} onChange={(e) => setNewQ({...newQ, question: e.target.value})} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-3xl px-6 py-4 text-[#F7C705] font-black outline-none h-32" placeholder="نص السؤال..." required />
+                    <textarea value={newQ.answer || ''} onChange={(e) => setNewQ({...newQ, answer: e.target.value})} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/20 rounded-3xl px-6 py-4 text-[#F7C705] font-black outline-none h-32" placeholder="الجواب..." required />
+                 </div>
+                 <button type="submit" className="w-full bg-[#F7C705] text-black py-6 rounded-[30px] font-black text-2xl shadow-2xl hover:scale-[1.01] transition-all">إضافة التحدي للقاعدة</button>
+              </form>
+           </div>
 
-                {questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length === 0 && (
-                  <div className="col-span-full text-center py-8 text-gray-400 font-bold">
-                    📭 لا توجد أي تحديات مضافة حالياً.
-                  </div>
-                )}
+           <div className="bg-black/5 rounded-[60px] p-10 border-4 border-black/5">
+              <div className="flex justify-between items-center mb-10">
+                 <h2 className="text-3xl font-black text-black">إدارة الأسئلة</h2>
+                 <select value={selectedCatFilter} onChange={(e) => setSelectedCatFilter(e.target.value)} className="bg-white border-4 border-black/5 rounded-2xl px-6 py-2 font-black outline-none">
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                 </select>
               </div>
-            ) : (
-              /* 2️⃣ العرض الثاني: عرض الأسئلة داخل الصنف */
               <div className="space-y-4">
-                {questions
-                  .filter((q: any) => q && q.category === selectedCategory && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id))
-                  .reverse()
-                  .map((q: any) => {
-                    const safeId = q._id || q.id;
-                    return (
-                      <div key={safeId} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm animate-in fade-in duration-300">
-                        <div className="flex-1 text-right">
-                          <div className="flex gap-2 mb-2 justify-end">
-                            <span className="bg-black/10 text-black text-[10px] px-2 py-0.5 rounded font-black">
-                              {q.questionImage || q.image ? '📸 يحتوي على صورة' : '📝 نصي'}
-                            </span>
-                            <span className="bg-black text-[#F7C705] text-[10px] px-2 py-0.5 rounded font-black">
-                              {q.category}
-                            </span>
+                 {questions.filter(q => q.category === selectedCatFilter).map(q => (
+                    <div key={q.id} className="bg-white p-6 rounded-[35px] border-4 border-black/5 flex items-center justify-between shadow-sm">
+                       <div className="flex-1">
+                          <div className="flex gap-2 mb-2">
+                             <span className="bg-black text-[#F7C705] text-[10px] px-3 py-1 rounded-full font-black uppercase">{q.difficulty}</span>
+                             <span className="bg-black/5 text-black text-[10px] px-3 py-1 rounded-full font-black">ID: {q.id.split('-').pop()}</span>
                           </div>
-                          <p className="text-black font-black text-lg">{q.question}</p>
-                        </div>
-                        <button
-                          onClick={() => onDeleteQuestion(safeId)}
-                          className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-4 border border-transparent hover:border-black"
-                        >
-                          <Trash2 size={24} />
-                        </button>
-                      </div>
-                    );
-                  })}
+                          <p className="text-black font-black text-lg line-clamp-2">{q.question}</p>
+                       </div>
+                       <button onClick={() => onDeleteQuestion(q.id)} className="p-4 rounded-[20px] bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all mr-6"><Trash2 size={24} /></button>
+                    </div>
+                 ))}
               </div>
-            )}
-          </div>
+           </div>
         </div>
       )}
     </div>

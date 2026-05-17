@@ -27,7 +27,8 @@ export const CATEGORIES_CONFIG = [
   { name: 'رياضيات وألغاز منطق', icon: '/img/categories/math.jpg' },
   { name: 'لغة عربية', icon: '/img/categories/ar.jpg' },
   { name: 'علوم', icon: '/img/categories/3lm.jpg' }
-];
+]
+.slice(0, 24); // Ensuring exactly 24 based on instruction, can be more later.
 
 export const CATEGORIES = CATEGORIES_CONFIG.map(c => c.name);
 

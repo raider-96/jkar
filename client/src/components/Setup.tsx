@@ -1,21 +1,31 @@
-import React, { useState } from 'react';
-import { CATEGORIES_CONFIG } from '../data/questions';
-import { motion } from 'framer-motion';
-import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert } from 'lucide-react';
 
-// 1. دمج جميع الخصائص في واجهة واحدة متكاملة بدون تكرار
+import React, { useState } from 'react';
+import { CATEGORIES_CONFIG, QUESTIONS } from '../data/questions';
+import { motion } from 'framer-motion';
+import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles } from 'lucide-react';
+import { HelpType, Question } from '../types';
+
 interface SetupProps {
-  onSetupComplete: (teams: [string, string], categories: string[]) => void;
-  allQuestions: any[];
+  onStart: (team1: string, team2: string, selectedCats: string[], t1Helps: HelpType[], t2Helps: HelpType[]) => void;
   isAdmin: boolean;
   onOpenAdmin: () => void;
+  allQuestions: Question[];
 }
 
-// 2. تحديث الخصائص المستلمة في الكومبوننت لتطابق الواجهة
-const Setup: React.FC<SetupProps> = ({ onSetupComplete, isAdmin, onOpenAdmin }) => {
+const HELPS_CONFIG: { type: HelpType; name: string; desc: string }[] = [
+  { type: 'think', name: 'خل أفكر', desc: 'تعطي الفريق 60 ثانية للإجابة' },
+  { type: 'phone', name: 'أريد أخبار', desc: 'إيقاف الوقت، ثم استئنافه بـ 40 ثانية' },
+  { type: 'destruction', name: 'تفليش', desc: 'إذا جاوبتم صح، الخصم ينقص نقاط السؤال' },
+  { type: 'change', name: 'شوفلي غيرة', desc: 'تبديل السؤال بنفس المستوى وتجديد الوقت' },
+  { type: 'thief', name: 'حرامي', desc: 'سرقة سؤال الخصم القادم' },
+];
+
+const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestions }) => {
   const [team1, setTeam1] = useState('الفريق الأول');
   const [team2, setTeam2] = useState('الفريق الثاني');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
+  const [team1Helps, setTeam1Helps] = useState<HelpType[]>([]);
+  const [team2Helps, setTeam2Helps] = useState<HelpType[]>([]);
   const [showRules, setShowRules] = useState(false);
 
   const toggleCategory = (cat: string) => {
@@ -26,10 +36,19 @@ const Setup: React.FC<SetupProps> = ({ onSetupComplete, isAdmin, onOpenAdmin }) 
     }
   };
 
-  // 3. تحديث الدالة لترسل البيانات للـ App.tsx عبر الهيكل الجديد المتوقع (Tuple)
+  const toggleHelp = (teamIdx: 1 | 2, help: HelpType) => {
+    if (teamIdx === 1) {
+      if (team1Helps.includes(help)) setTeam1Helps(team1Helps.filter(h => h !== help));
+      else if (team1Helps.length < 3) setTeam1Helps([...team1Helps, help]);
+    } else {
+      if (team2Helps.includes(help)) setTeam2Helps(team2Helps.filter(h => h !== help));
+      else if (team2Helps.length < 3) setTeam2Helps([...team2Helps, help]);
+    }
+  };
+
   const handleStart = () => {
-    if (selectedCats.length === 6) {
-      onSetupComplete([team1, team2], selectedCats);
+    if (selectedCats.length === 6 && team1Helps.length === 3 && team2Helps.length === 3) {
+      onStart(team1, team2, selectedCats, team1Helps, team2Helps);
     }
   };
 
@@ -37,7 +56,7 @@ const Setup: React.FC<SetupProps> = ({ onSetupComplete, isAdmin, onOpenAdmin }) 
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="max-w-5xl mx-auto p-6 rtl"
+      className="max-w-6xl mx-auto p-6 rtl pb-20"
     >
       <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
         <h1 className="text-5xl font-black text-black tracking-tighter uppercase">إعداد اللعبة</h1>
@@ -69,39 +88,78 @@ const Setup: React.FC<SetupProps> = ({ onSetupComplete, isAdmin, onOpenAdmin }) 
           </h2>
           <ul className="space-y-3 font-bold text-lg opacity-90">
             <li className="flex gap-3"><span className="text-yellow-500">●</span> يتم تشكيل فريقين متنافسين.</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل فريق يختار 3 أصناف يتميز فيها(المجموع 6 أصناف للعبة).</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل فريق يختار 3 أصناف (المجموع 6 أصناف للعبة).</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> لكل صنف 3 مستويات صعوبة: سهل (100)، متوسط (200)، صعب (400).</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل مستوى صعوبة يحتوي على سؤالين .</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span>عند انتهاء وقت الفريق الاول يحق للفريق الثاني تقديم اجابة ايضا وعندة انتهاء الوقت الفريق صاحب الاجابة الصحيحة ياخذ النقاط .</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span> كل مستوى صعوبة يحتوي على سؤالين في القيم الواحد.</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> الفائز هو الفريق الذي يجمع أكبر عدد من النقاط.</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span> الأسئلة التي تتم الإجابة عليها لا تتكرر في المرات القادمة.</li>
           </ul>
         </div>
       )}
 
       <div className="grid md:grid-cols-2 gap-8 mb-12">
-        <div className="space-y-4">
-          <label className="block text-black font-black mb-2 flex items-center gap-2 uppercase tracking-wide">
-            <Users size={20} className="text-black/40" /> اسم الفريق الأول
-          </label>
-          <input
-            type="text"
-            value={team1}
-            onChange={(e) => setTeam1(e.target.value)}
-            className="w-full bg-white/50 border-4 border-black/10 rounded-3xl py-5 px-6 focus:border-black outline-none text-black font-black text-xl transition-all"
-            placeholder="أدخل اسم الفريق..."
-          />
+        {/* Team 1 Setup */}
+        <div className="bg-white/40 p-8 rounded-[40px] border-4 border-black/5 space-y-6 shadow-xl">
+          <div className="space-y-4">
+            <label className="block text-black font-black mb-2 flex items-center gap-2 uppercase tracking-wide">
+              <Users size={20} className="text-black/40" /> اسم الفريق الأول
+            </label>
+            <input
+              type="text"
+              value={team1}
+              onChange={(e) => setTeam1(e.target.value)}
+              className="w-full bg-black border-4 border-black rounded-3xl py-5 px-6 outline-none text-[#F7C705] font-black text-xl transition-all"
+            />
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-sm font-black text-black/40 uppercase tracking-widest flex items-center gap-2">
+              <Sparkles size={16} /> اختر 3 وسائل مساعدة
+            </h3>
+            <div className="grid grid-cols-1 gap-2">
+              {HELPS_CONFIG.map(help => (
+                <button
+                  key={help.type}
+                  onClick={() => toggleHelp(1, help.type)}
+                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team1Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
+                >
+                  <div className="text-sm">{help.name}</div>
+                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="space-y-4">
-          <label className="block text-black font-black mb-2 flex items-center gap-2 uppercase tracking-wide">
-            <Users size={20} className="text-black/40" /> اسم الفريق الثاني
-          </label>
-          <input
-            type="text"
-            value={team2}
-            onChange={(e) => setTeam2(e.target.value)}
-            className="w-full bg-white/50 border-4 border-black/10 rounded-3xl py-5 px-6 focus:border-black outline-none text-black font-black text-xl transition-all"
-            placeholder="أدخل اسم الفريق..."
-          />
+
+        {/* Team 2 Setup */}
+        <div className="bg-white/40 p-8 rounded-[40px] border-4 border-black/5 space-y-6 shadow-xl">
+          <div className="space-y-4">
+            <label className="block text-black font-black mb-2 flex items-center gap-2 uppercase tracking-wide">
+              <Users size={20} className="text-black/40" /> اسم الفريق الثاني
+            </label>
+            <input
+              type="text"
+              value={team2}
+              onChange={(e) => setTeam2(e.target.value)}
+              className="w-full bg-black border-4 border-black rounded-3xl py-5 px-6 outline-none text-[#F7C705] font-black text-xl transition-all"
+            />
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-sm font-black text-black/40 uppercase tracking-widest flex items-center gap-2">
+              <Sparkles size={16} /> اختر 3 وسائل مساعدة
+            </h3>
+            <div className="grid grid-cols-1 gap-2">
+              {HELPS_CONFIG.map(help => (
+                <button
+                  key={help.type}
+                  onClick={() => toggleHelp(2, help.type)}
+                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team2Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
+                >
+                  <div className="text-sm">{help.name}</div>
+                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -112,34 +170,36 @@ const Setup: React.FC<SetupProps> = ({ onSetupComplete, isAdmin, onOpenAdmin }) 
             المختار: {selectedCats.length} / 6
           </span>
         </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
           {CATEGORIES_CONFIG.map(cat => {
             const isSelected = selectedCats.includes(cat.name);
+            const catQsCount = allQuestions.filter(q => q.category === cat.name).length;
+            const gamesCount = Math.floor(catQsCount / 6);
+
             return (
               <button
                 key={cat.name}
                 onClick={() => toggleCategory(cat.name)}
                 disabled={!isSelected && selectedCats.length >= 6}
                 className={`
-                  relative h-40 rounded-[32px] border-4 transition-all duration-300 overflow-hidden flex items-center justify-center
+                  relative p-5 h-40 rounded-[35px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center gap-2
                   ${isSelected 
-                    ? 'bg-black border-black shadow-2xl scale-105 -rotate-2' 
-                    : 'bg-white/40 border-black/5 hover:border-black/20 hover:bg-white/60'
+                    ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105' 
+                    : 'bg-white/40 border-black/5 text-black/60 hover:border-black/20'
                   }
                   disabled:opacity-30 disabled:cursor-not-allowed
                 `}
               >
-                <img 
-                  src={cat.icon} 
-                  alt={cat.name} 
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" 
-                />
-                
-                {isSelected && (
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                     <CheckCircle2 className="text-[#F7C705]" size={40} />
+                <span className="text-4xl">{cat.icon}</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] leading-tight mb-1">{cat.name}</span>
+                  <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isSelected ? 'bg-[#F7C705] text-black' : 'bg-black/10 text-black/60'}`}>
+                    {gamesCount} ألعاب متاحة
                   </div>
+                </div>
+                {isSelected && (
+                  <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705]/50" size={18} />
                 )}
               </button>
             );

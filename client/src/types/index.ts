@@ -1,25 +1,15 @@
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
-export type ChallengeType = 'text' | 'image' | 'act' | 'sound';
-export interface Team {
-  name: string;
-  score: number;
-  categories: string[];
-  usedHelplines: string[]; // تأكد من إضافة هذا السطر هنا ليقبلها الكود في App.tsx
-}
+
 export interface Question {
   id: string;
-  _id?: string; // لدعم معرّف قاعدة البيانات
   category: string;
   difficulty: Difficulty;
   question: string;
   answer: string;
   points: number;
-  image?: string;
-  type?: ChallengeType;
-  questionImage?: string; // 👈 أضف هذا السطر هنا
-  answerImage?: string;   // 👈 وأضف هذا السطر هنا
-  options?: string[];
+  qImage?: string;
+  aImage?: string;
 }
 
 export interface UserAccount {
@@ -30,10 +20,14 @@ export interface UserAccount {
   createdAt: string;
 }
 
+export type HelpType = 'think' | 'phone' | 'destruction' | 'change' | 'thief';
+
 export interface Team {
   name: string;
   score: number;
   categories: string[];
+  helps: HelpType[];
+  usedHelps: HelpType[];
 }
 
 export interface GameState {
@@ -42,4 +36,6 @@ export interface GameState {
   currentTurn: 0 | 1;
   answeredQuestionIds: string[];
   selectedCategories: string[];
+  activeDestruction: number | null; // Team index
+  activeThief: number | null; // Team index
 }
