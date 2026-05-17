@@ -16,7 +16,13 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
   const [activeTeamIdx, setActiveTeamIdx] = useState(currentTurn);
 
   // استخراج رابط الصورة بشكل آمن سواء كان مسمى image أو questionImage
-  const imageUrl = question.image || (question as any).questionImage;
+  // فحص شامل وذكي لجميع مسميات حقول الصور المحتملة القادمة من الباك إند أو قاعدة البيانات
+  const imageUrl = 
+    question.image || 
+    (question as any).questionImage || 
+    (question as any).img || 
+    (question as any).imgUrl ||
+    (question as any).url;
 
   useEffect(() => {
     if (timeLeft > 0 && !showAnswer) {
