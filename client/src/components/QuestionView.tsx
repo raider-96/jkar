@@ -76,31 +76,34 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
           </div>
         </div>
 
-        {/* Content Area - Scrollable */}
-        <div className="p-10 md:p-16 text-center overflow-y-auto custom-scrollbar flex-1">
-          <div className="flex flex-col items-center gap-6 mb-12">
-            <div className="flex items-center gap-3 bg-black text-[#F7C705] px-8 py-3 rounded-full text-lg font-black shadow-xl">
+       {/* Content Area - Scrollable */}
+        <div className="p-6 md:p-10 text-center overflow-y-auto custom-scrollbar flex-1 flex flex-col items-center">
+          
+          {/* شريط نوع التحدي والبوكس الخاص به */}
+          <div className="w-full flex flex-col items-center gap-4 mb-4 shrink-0">
+            <div className="flex items-center gap-3 bg-black text-[#F7C705] px-6 py-2 rounded-full text-base font-black shadow-xl">
               {getChallengeIcon()}
               <span>{getChallengeLabel()} • {question.points} نقطة</span>
             </div>
 
-            {/* عرض الصورة بشكل مرن واحترافي إذا كانت متوفرة */}
+            {/* عرض الصورة بشكل مضمون ومرن يمنع الاختفاء */}
             {imageUrl && (
-              <div className="w-full max-w-lg h-64 overflow-hidden rounded-[40px] border-8 border-black shadow-2xl mt-4 shrink-0">
+              <div className="w-full max-w-md h-52 sm:h-64 overflow-hidden rounded-[24px] border-4 sm:border-8 border-black shadow-2xl mt-2 block shrink-0 bg-black/5">
                 <img 
                   src={imageUrl} 
                   alt="Challenge" 
-                  className="w-full h-full object-cover" 
+                  className="w-full h-full object-contain" 
                 />
               </div>
             )}
           </div>
           
-          <h2 className="text-3xl md:text-5xl font-black text-black mb-16 leading-tight max-w-3xl mx-auto">
+          {/* نص السؤال مع تقليص الهامش السفلي لإعطاء مساحة للصورة */}
+          <h2 className="text-2xl md:text-4xl font-black text-black mb-6 mt-2 leading-tight max-w-3xl mx-auto shrink-0">
             {question.question}
           </h2>
 
-          <div className="space-y-8 pb-10">
+          <div className="w-full space-y-6 pb-6 mt-auto">
             {!showAnswer ? (
               <button
                 onClick={() => setShowAnswer(true)}
