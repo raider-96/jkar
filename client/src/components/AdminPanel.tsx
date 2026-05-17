@@ -255,10 +255,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 
           <div className="bg-black/5 rounded-[48px] p-10 border-4 border-black/5">
             <h2 className="text-2xl font-black text-black mb-10 flex items-center gap-2">
-              <List size={24} /> التحديات المضافة ({questions.filter(q => q && q.id && typeof q.id === 'string' && q.id.startsWith('custom-')).length})
+              <List size={24} /> التحديات المضافة 
+              ({questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).length})
             </h2>
             <div className="space-y-4">
-              {questions.filter(q => q && q.id && typeof q.id === 'string' && q.id.startsWith('custom-')).reverse().map((q) => (
+              {questions.filter((q: any) => q && ((q.id && typeof q.id === 'string' && q.id.startsWith('custom-')) || q._id)).reverse().map((q: any) => (
                 <div key={q.id} className="flex items-center justify-between p-6 bg-white border-4 border-black/5 rounded-[32px] shadow-sm">
                   <div className="flex-1">
                     <div className="flex gap-2 mb-2">
