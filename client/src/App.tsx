@@ -360,16 +360,16 @@ const handleDeleteQuestion = async (id: string) => {
     localStorage.removeItem('chgar_step');
     showToast('🔒 تم تسجيل الخروج بنجاح وبأمان.', 'info');
   };
-
-  return (
-    <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10">
+return (
+    <div className="min-h-screen bg-[#F7C705] text-black font-sans selection:bg-black/10 flex flex-col">
+      {/* شريط الخطوط المائلة الأسود والأصفر */}
       <div className="h-6 w-full bg-repeat-x flex overflow-hidden border-b-4 border-black">
         {Array.from({ length: 50 }).map((_, i) => (
           <div key={i} className={`w-8 h-full transform -skew-x-[45deg] ${i % 2 === 0 ? 'bg-black' : 'bg-transparent'}`} />
         ))}
       </div>
 
-      <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-8 border-b-2 border-black/10">
+      <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto w-full mb-8 border-b-2 border-black/10">
         <div className="flex items-center gap-4">
           <img 
             src="/img/lo.jpg"
@@ -385,20 +385,36 @@ const handleDeleteQuestion = async (id: string) => {
           </div>
         </div>
         
-        {currentUser && (
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end">
-              <span className="text-black/60 text-[10px] font-black uppercase tracking-widest">المستخدم الحالي</span>
-              <span className="text-black font-black text-lg">{currentUser.username}</span>
-            </div>
-            <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:scale-110 transition-transform shadow-lg">
-              <LogOut size={22} />
+        <div className="flex items-center gap-4 sm:gap-6">
+          {/* 🚀 زر العودة الذكي للمستخدم: يظهر في كل الأقسام واللعب (باستثناء تسجيل الدخول والصفحة الرئيسية) */}
+          {gameState.step !== 'login' && gameState.step !== 'setup' && (
+            <button
+              onClick={() => setGameState(prev => ({ ...prev, step: 'setup' }))}
+              className="flex items-center gap-2 bg-black text-[#F7C705] font-black px-4 py-2.5 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all text-sm border-2 border-black"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 19 12 12 5"></polyline>
+              </svg>
+              <span>العودة للقائمة</span>
             </button>
-          </div>
-        )}
+          )}
+
+          {currentUser && (
+            <div className="flex items-center gap-4 sm:gap-6">
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-black/60 text-[10px] font-black uppercase tracking-widest">المستخدم الحالي</span>
+                <span className="text-black font-black text-lg">{currentUser.username}</span>
+              </div>
+              <button onClick={handleLogout} className="bg-black text-[#F7C705] p-2.5 rounded-xl hover:scale-110 transition-transform shadow-lg border-2 border-black">
+                <LogOut size={22} />
+              </button>
+            </div>
+          )}
+        </div>
       </nav>
 
-      <main className="relative z-10 pb-20">
+      <main className="relative z-10 pb-20 flex-grow">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
         
         {gameState.step === 'admin' && (
@@ -483,7 +499,7 @@ const handleDeleteQuestion = async (id: string) => {
         />
       )}
 
-      {/* 🔔 حاوية نظام الإشعارات الاحترافي السلس والملون المتناسق مع ألوان چگار */}
+      {/* حاوية نظام الإشعارات */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-6 py-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-black font-black text-lg transform animate-in slide-in-from-bottom duration-300 rtl
           ${toast.type === 'success' ? 'bg-[#F7C705] text-black' : ''}
