@@ -6,8 +6,9 @@ require('dotenv').config();
 const app = express();
 
 // الأسطر السحرية لترجمة البيانات القادمة من الفرونت إند
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: true }));
+// 👈 أضف أو استبدل هذه السطور لرفع حد حجم الصور المرفوعة
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cors());
 
 // 1. تعريف الهياكل (Schemas & Models)
@@ -112,7 +113,7 @@ app.post('/api/users', async (req, res) => {
 
 // تفعيل / تعطيل مستخدم
 app.patch('/api/users/:username/toggle', async (req, res) => {
-  try {
+   try {
     const user = await User.findOne({ username: req.params.username });
     if (!user) return res.status(404).json({ error: 'المستخدم غير موجود' });
     
@@ -132,6 +133,27 @@ app.delete('/api/users/:username', async (req, res) => {
     res.json({ message: 'تم حذف المستخدم بنجاح' });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// راوت حذف التحديات من قاعدة البيانات باستخدام الـ ID
+app.delete('/api/questions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // فحص إذا كان المعرّف يخص أسئلة المونجو أو الأسئلة المحلية المعرفة بـ custom-
+    if (id.startsWith('custom-')) {
+      // إذا كنت تحفظ الأسئلة المخصصة بـ المونجو أيضاً بالـ id الخاص بها:
+      await Question.deleteOne({ id: id });
+    } else {
+      // الحذف الافتراضي بمعرّف المونجو ID
+      await Question.findByIdAndDelete(id);
+    }
+
+    res.status(200).json({ success: true, message: "تم حذف التحدي بنجاح من السيرفر" });
+  } catch (error) {
+    console.error("خطأ أثناء الحذف من السيرفر:", error);
+    res.status(500).json({ success: false, error: "حدث خطأ في السيرفر أثناء محاولة الحذف" });
   }
 });
 

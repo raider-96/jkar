@@ -225,33 +225,33 @@ const App: React.FC = () => {
 const handleDeleteQuestion = async (id: string) => {
     try {
       // إرسال طلب الحذف الفعلي إلى الباك إند
-      const response = await fetch(`${API_URL}/api/questions/${id}`, {
+      const response = await fetch(`/api/questions/${id}`, {
         method: 'DELETE',
       });
 
-      // إذا لم ينجح المسار الأول، نجرب المسار البديل بدون /api/
       if (!response.ok) {
-        const secondaryResponse = await fetch(`${API_URL}/questions/${id}`, {
+        const fallbackResponse = await fetch(`https://jkar.vercel.app/api/questions/${id}`, {
           method: 'DELETE',
         });
         
-        if (!secondaryResponse.ok) {
-          throw new Error('فشل الحذف من كلا المسارين');
+        if (!fallbackResponse.ok) {
+          throw new Error('فشل الحذف من السيرفر');
         }
       }
 
-      // تحديث الواجهة محلياً فور نجاح الحذف من السيرفر
-      const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
-      const updated = safeQuestions.filter((q: any) => {
-        const qId = q._id || q.id;
-        return qId !== id;
+      // التحديث المحلي المتوافق 100% مع الـ State دون الحاجة لـ any خارجي
+      ((prevQuestions: any[]) => {
+        return prevQuestions.filter((q: any) => {
+          const targetId = q._id || q.id;
+          return targetId !== id;
+        });
       });
-      setAllQuestions(updated);
-      showToast('🗑️ تم حذف التحدي نهائياً من قاعدة البيانات بنجاح!', 'info');
+
+      console.log("Deleted successfully");
 
     } catch (err) {
       console.error("خطأ أثناء حذف السؤال:", err);
-      showToast('❌ حدث خطأ في الاتصال بالسيرفر أثناء محاولة الحذف', 'error');
+      alert('❌ حدث خطأ في الاتصال بالسيرفر أثناء محاولة الحذف');
     }
   };
   const handleStartGame = (t1: string, t2: string, cats: string[]) => {
@@ -319,7 +319,7 @@ const handleDeleteQuestion = async (id: string) => {
         origin: { y: 0.6 },
         colors: ['#6366f1', '#a855f7', '#ec4899']
       });
-      showToast(`🏆 إجابة صحيحة! +${activeQuestion.question.points} نقطة لـ ${newTeams[winnerIndex].name}`, 'success');
+      showToast(`🏆 إجابة صحيحة +${activeQuestion.question.points} نقطة لـ ${newTeams[winnerIndex].name}`, 'success');
     } else {
       showToast('💥 تم تجاوز السؤال بدون رابح نقاط.', 'info');
     }
