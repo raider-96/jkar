@@ -1,16 +1,18 @@
-
 import React, { useState } from 'react';
 import { CATEGORIES_CONFIG } from '../data/questions';
 import { motion } from 'framer-motion';
 import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert } from 'lucide-react';
 
+// 1. دمج جميع الخصائص في واجهة واحدة متكاملة بدون تكرار
 interface SetupProps {
-  onStart: (team1: string, team2: string, selectedCats: string[]) => void;
+  onSetupComplete: (teams: [string, string], categories: string[]) => void;
+  allQuestions: any[];
   isAdmin: boolean;
   onOpenAdmin: () => void;
 }
 
-const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
+// 2. تحديث الخصائص المستلمة في الكومبوننت لتطابق الواجهة
+const Setup: React.FC<SetupProps> = ({ onSetupComplete, isAdmin, onOpenAdmin }) => {
   const [team1, setTeam1] = useState('الفريق الأول');
   const [team2, setTeam2] = useState('الفريق الثاني');
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
@@ -24,14 +26,15 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
     }
   };
 
+  // 3. تحديث الدالة لترسل البيانات للـ App.tsx عبر الهيكل الجديد المتوقع (Tuple)
   const handleStart = () => {
     if (selectedCats.length === 6) {
-      onStart(team1, team2, selectedCats);
+      onSetupComplete([team1, team2], selectedCats);
     }
   };
 
   return (
-          <motion.div 
+    <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="max-w-5xl mx-auto p-6 rtl"
@@ -109,42 +112,39 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin }) => {
             المختار: {selectedCats.length} / 6
           </span>
         </div>
-<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-  {CATEGORIES_CONFIG.map(cat => {
-    const isSelected = selectedCats.includes(cat.name);
-    return (
-      <button
-        key={cat.name}
-        onClick={() => toggleCategory(cat.name)}
-        disabled={!isSelected && selectedCats.length >= 6}
-        className={`
-          relative h-40 rounded-[32px] border-4 transition-all duration-300 overflow-hidden flex items-center justify-center
-          ${isSelected 
-            ? 'bg-black border-black shadow-2xl scale-105 -rotate-2' 
-            : 'bg-white/40 border-black/5 hover:border-black/20 hover:bg-white/60'
-          }
-          disabled:opacity-30 disabled:cursor-not-allowed
-        `}
-      >
-        {/* الصورة الآن تملأ المربع بالكامل */}
-        <img 
-          src={cat.icon} 
-          alt={cat.name} 
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" 
-        />
         
-        {/* تم حذف سطر اسم الصنف لجعل الصورة تظهر كاملة */}
-
-        {isSelected && (
-          /* إضافة طبقة تظليل خفيفة عند الاختيار لتمييز علامة الصح */
-          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-             <CheckCircle2 className="text-[#F7C705]" size={40} />
-          </div>
-        )}
-      </button>
-    );
-  })}
-</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {CATEGORIES_CONFIG.map(cat => {
+            const isSelected = selectedCats.includes(cat.name);
+            return (
+              <button
+                key={cat.name}
+                onClick={() => toggleCategory(cat.name)}
+                disabled={!isSelected && selectedCats.length >= 6}
+                className={`
+                  relative h-40 rounded-[32px] border-4 transition-all duration-300 overflow-hidden flex items-center justify-center
+                  ${isSelected 
+                    ? 'bg-black border-black shadow-2xl scale-105 -rotate-2' 
+                    : 'bg-white/40 border-black/5 hover:border-black/20 hover:bg-white/60'
+                  }
+                  disabled:opacity-30 disabled:cursor-not-allowed
+                `}
+              >
+                <img 
+                  src={cat.icon} 
+                  alt={cat.name} 
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" 
+                />
+                
+                {isSelected && (
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                     <CheckCircle2 className="text-[#F7C705]" size={40} />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-16 flex justify-center">

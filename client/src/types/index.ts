@@ -1,7 +1,12 @@
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type ChallengeType = 'text' | 'image' | 'act' | 'sound';
-
+export interface Team {
+  name: string;
+  score: number;
+  categories: string[];
+  usedHelplines: string[]; // تأكد من إضافة هذا السطر هنا ليقبلها الكود في App.tsx
+}
 export interface Question {
   id: string;
   _id?: string; // لدعم معرّف قاعدة البيانات

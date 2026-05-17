@@ -53,10 +53,10 @@ const QuestionView: React.FC<QuestionViewProps> = ({
     return isImageChallenge ? 'تحدي تخمين الصورة' : `سؤال: ${question.category}`;
   };
 
-  const imageUrl = rawImage
-    ? (rawImage.startsWith('http') ? rawImage : `${window.location.origin}${rawImage}`)
-    : null;
-
+ const imageUrl = question.imageUrl 
+  ? (question.imageUrl.startsWith('http') ? question.imageUrl : `${window.location.origin}${question.imageUrl}`) 
+  : null;
+  
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 md:p-6 rtl select-none">
       <div className="bg-[#F7C705] border-4 border-black w-full max-w-4xl h-[92vh] rounded-[36px] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden text-black animate-in zoom-in-95 duration-200">

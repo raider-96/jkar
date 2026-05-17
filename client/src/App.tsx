@@ -7,21 +7,21 @@ import ScoreBoard from './components/ScoreBoard';
 import QuestionView from './components/QuestionView';
 import AdminPanel from './components/AdminPanel';
 import confetti from 'canvas-confetti';
-import { RotateCcw, LogOut, Award,  } from 'lucide-react';
+import { RotateCcw, LogOut, Award, ArrowLeft } from 'lucide-react';
 
 const API_URL = `${window.location.origin}/api`;
 
 const App: React.FC = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    step: 'login',
-    teams: [
-      { name: 'الفريق الأول', score: 0, categories: [] },
-      { name: 'الفريق الثاني', score: 0, categories: [] },
-    ],
-    currentTurn: 0,
-    answeredQuestionIds: [],
-    selectedCategories: [],
-  });
+const [gameState, setGameState] = useState<GameState>({
+  step: 'login',
+  teams: [
+    { name: 'الفريق الأول', score: 0, categories: [], usedHelplines: [] }, // إرسال مصفوفة فارغة هنا
+    { name: 'الفريق الثاني', score: 0, categories: [], usedHelplines: [] }, // وإرسال مصفوفة فارغة هنا
+  ],
+  currentTurn: 0,
+  answeredQuestionIds: [],
+  selectedCategories: [],
+});
 
   const [activeQuestion, setActiveQuestion] = useState<{
     question: Question;
@@ -33,10 +33,10 @@ const App: React.FC = () => {
   const [allQuestions, setAllQuestions] = useState<any[]>([]);
   const [permanentlyUsedIds, setPermanentlyUsedIds] = useState<string[]>([]);
 
-  // 🚀 تتبع وسائل المساعدة المستخدمة لكل فريق (اسم الوسيلة)
+  // 🚀 تتبع وسائل المساعدة المستخدمة لكل فريق
   const [usedHelplines, setUsedHelplines] = useState<{ [key: number]: string[] }>({
-    0: [], // وسائل الفريق الأول
-    1: [], // وسائل الفريق الثاني
+    0: [], 
+    1: [], 
   });
 
   // 🚀 تتبع المساعدات النشطة التي تؤثر على التحدي الحالي
@@ -67,13 +67,15 @@ const App: React.FC = () => {
     fetch(`${API_URL}/questions`)
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setAllQuestions(data);
-        else setAllQuestions([]);
+        if (Array.isArray(data)) {
+          const processed = data.map((q: any) => ({
+            ...q,
+            imageUrl: q.imageUrl ? (q.imageUrl.startsWith('http') ? q.imageUrl : `${window.location.origin}${q.imageUrl.startsWith('/') ? '' : '/'}${q.imageUrl}`) : ""
+          }));
+          setAllQuestions(processed);
+        }
       })
-      .catch(err => {
-        console.error("خطأ في جلب الأسئلة:", err);
-        setAllQuestions([]);
-      });
+      .catch(err => console.error("خطأ في جلب الأسئلة:", err));
   }, [gameState.step]);
 
   const handleLogin = (username: string, password?: string) => {
@@ -178,22 +180,31 @@ const App: React.FC = () => {
     setAllQuestions(updated);
   };
 
-  const handleStartGame = (t1: string, t2: string, cats: string[]) => {
-    setGameState({
-      ...gameState,
-      step: 'game',
-      teams: [
-        { name: t1, score: 0, categories: cats.slice(0, 3) },
-        { name: t2, score: 0, categories: cats.slice(3, 6) },
-      ],
-      selectedCategories: cats,
-      answeredQuestionIds: [],
-    });
-    // تصفير المساعدات للعبة الجديدة
-    setUsedHelplines({ 0: [], 1: [] });
-    setActiveEffects({ isStolen: false, isDestroyed: false, destroyingTeamIdx: null, initialBonusTime: 0 });
-  };
+const handleSetupGame = (teams: [string, string], categories: string[]) => {
+  setGameState({
+    step: 'game', // أو 'board' حسب الـ Type المعتمد في ملف الخصائص لديك
+    teams: [
+      { 
+        name: teams[0], 
+        score: 0, 
+        categories: categories.slice(0, 3), 
+        usedHelplines: [] // تهيئة المساعدات للفريق الأول
+      },
+      { 
+        name: teams[1], 
+        score: 0, 
+        categories: categories.slice(3, 6), 
+        usedHelplines: [] // تهيئة المساعدات للفريق الثاني
+      }
+    ],
+    selectedCategories: categories,
+    answeredQuestionIds: [],
+    currentTurn: 0,
+  });
 
+  // إذا كنت تستخدم state منفصل للمساعدات تذكر تحديثه بالتوازي أو دمجه بالـ gameState
+  // setUsedHelplines({ 0: [], 1: [] }); 
+};
   const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
     const safeQuestions = Array.isArray(allQuestions) ? allQuestions : [];
     const available = safeQuestions.filter(q => 
@@ -231,10 +242,10 @@ const App: React.FC = () => {
     setGameState(prev => ({ ...prev, teams: newTeams }));
   };
 
-  // 🚀 دالة تفعيل وسائل المساعدة من الشاشة الرئيسية
   const handleUseHelpline = (teamIdx: number, key: string) => {
-    if (usedHelplines[teamIdx].length >= 3) {
-      alert("❌ لقد استهلك هذا الفريق الحد الأقصى من وسائل المساعدة (3 وسائل فقط)!");
+    // تم زيادة الحد الأقصى إلى 5 ليتسع لوسيلة التبديل الخامسة بنجاح وبدون حظر الكرت
+    if (usedHelplines[teamIdx].length >= 5) {
+      alert("❌ لقد استهلك هذا الفريق الحد الأقصى من وسائل المساعدة!");
       return;
     }
     if (usedHelplines[teamIdx].includes(key)) {
@@ -263,7 +274,6 @@ const App: React.FC = () => {
     }
   };
 
-  // 🚀 دالة تبديل السؤال (شوفلي غيرة) المخصصة لـ QuestionView
   const handleSkipQuestion = () => {
     if (!activeQuestion) return;
 
@@ -282,7 +292,6 @@ const App: React.FC = () => {
     const nextQ = sameCategory[Math.floor(Math.random() * sameCategory.length)];
     setActiveQuestion(prev => prev ? { ...prev, question: nextQ } : null);
     
-    // تسجيل استخدام الوسيلة للفريق الحالي
     setUsedHelplines(prev => ({
       ...prev,
       [gameState.currentTurn]: [...prev[gameState.currentTurn], 'change_question']
@@ -296,7 +305,6 @@ const App: React.FC = () => {
     const points = activeQuestion.question.points;
 
     if (winnerIndex !== null) {
-      // 🚀 [حساب مفعول تفليش النشط]
       if (activeEffects.isDestroyed && activeEffects.destroyingTeamIdx === winnerIndex) {
         const opponentIndex = winnerIndex === 0 ? 1 : 0;
         newTeams[winnerIndex].score += points;
@@ -305,12 +313,11 @@ const App: React.FC = () => {
         newTeams[winnerIndex].score += points;
       }
 
-      const colors = ['#F7C705', '#000000', '#ffffff'];
       confetti({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: colors
+        colors: ['#F7C705', '#000000', '#ffffff']
       });
     }
 
@@ -323,7 +330,6 @@ const App: React.FC = () => {
     const totalSlots = gameState.selectedCategories.length * 3 * 2;
     const isGameOver = newAnswered.length === totalSlots;
 
-    // إعادة تصفير تأثيرات المساعدات المؤقتة للجولة القادمة
     setActiveEffects({ isStolen: false, isDestroyed: false, destroyingTeamIdx: null, initialBonusTime: 0 });
 
     setGameState({
@@ -347,11 +353,10 @@ const App: React.FC = () => {
     setGameState(prev => ({ ...prev, step: 'login' }));
   };
 
-  // قائمة الوسائل المساعدة للعرض
   const helplineList = [
     { key: 'add_minute', label: '⏱️ خل افكر' },
     { key: 'call_friend', label: '📞 اريد اخابر' },
-    { key: 'steal_question', label: '🥷 جرامي' },
+    { key: 'steal_question', label: '🥷 حرامي' },
     { key: 'destroy', label: '💥 تفليش' },
   ];
 
@@ -365,12 +370,22 @@ const App: React.FC = () => {
 
       <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4 border-b-2 border-black/10">
         <div className="flex items-center gap-4">
+          {/* 🚀 إظهار زر لوحة التحكم الذكي والعودة بحرية كاملة للمشرف */}
+          {currentUser?.username.toLowerCase() === 'admin' && gameState.step !== 'admin' && gameState.step !== 'login' && (
+            <button 
+              onClick={() => setGameState(prev => ({ ...prev, step: 'admin' }))}
+              className="flex items-center gap-2 bg-black text-[#F7C705] px-4 py-2 rounded-xl font-bold hover:scale-105 transition-transform shadow-md text-sm"
+            >
+              <ArrowLeft size={16} />
+              لوحة التحكم
+            </button>
+          )}
           <div className="flex flex-col">
             <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
             <span className="text-[10px] font-black tracking-[0.2em] opacity-40">CHGAR GAME</span>
           </div>
         </div>
-        
+
         {currentUser && (
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-end">
@@ -384,7 +399,7 @@ const App: React.FC = () => {
         )}
       </nav>
 
-   <main className="container mx-auto p-4 md:p-6 max-w-7xl">
+      <main className="container mx-auto p-4 md:p-6 max-w-7xl">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
         
         {gameState.step === 'admin' && (
@@ -400,31 +415,30 @@ const App: React.FC = () => {
           />
         )}
         
-        {gameState.step === 'setup' && (
-          <Setup 
-            onStart={handleStartGame} 
-            isAdmin={currentUser?.role === 'admin'} 
-            onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))}
-          />
-        )}
+    {gameState.step === 'setup' && (
+  <Setup
+    onSetupComplete={handleSetupGame}
+    allQuestions={allQuestions}
+    isAdmin={currentUser?.role === 'admin'}
+    onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))}
+  />
+)}
         
         {gameState.step === 'game' && (
           <div className="space-y-6 animate-in fade-in duration-700 max-w-7xl mx-auto px-4">
-            
-            {/* 🚀 قسم لوحة وسائل المساعدة للفرق بداخل شاشة اللعبة */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 rtl text-right bg-black/5 p-4 rounded-[32px] border-4 border-black/10">
               {[0, 1].map((teamIdx) => (
                 <div key={teamIdx} className={`p-4 rounded-[24px] bg-white border-4 border-black ${gameState.currentTurn === teamIdx ? 'ring-4 ring-black ring-offset-2' : 'opacity-80'}`}>
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-black text-lg text-black">وسائل مساعدة {gameState.teams[teamIdx].name}</h4>
                     <span className="text-xs bg-black text-[#F7C705] px-3 py-1 rounded-full font-bold">
-                      المستخدم: {usedHelplines[teamIdx].length} / 3
+                      المستخدم: {usedHelplines[teamIdx].filter(k => k !== 'change_question').length} / 4
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {helplineList.map((help) => {
                       const isUsed = usedHelplines[teamIdx].includes(help.key);
-                      const isMaxed = usedHelplines[teamIdx].length >= 3 && !isUsed;
+                      const isMaxed = usedHelplines[teamIdx].filter(k => k !== 'change_question').length >= 4 && !isUsed;
                       return (
                         <button
                           key={help.key}
@@ -483,27 +497,21 @@ const App: React.FC = () => {
               onClick={handleReset}
               className="flex items-center gap-2 mx-auto bg-white text-indigo-950 px-10 py-4 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl"
             >
-              <RotateCcw />
-              لعبة جديدة
+              <RotateCcw /> لعبة جديدة
             </button>
           </div>
         )}
       </main>
 
-      {/* 🚀 الربط الحقيقي الصافي للمكون بداخل كودك وبدون أي خطأ في الـ TypeScript */}
       {activeQuestion && (
         <QuestionView
           question={activeQuestion.question}
           teams={[gameState.teams[0].name, gameState.teams[1].name]}
           currentTurn={gameState.currentTurn}
           onAnswer={(winnerIndex) => handleAnswer(winnerIndex)}
-          
-          // تمرير قيم الـ States النشطة الحالية التي قمت بحسابها بالبورد تلقائياً
-          initialBonusTime={activeEffects.initialBonusTime} 
-          hasChangeHelpline={!usedHelplines[gameState.currentTurn].includes('change_question')}
-          onSkipQuestion={() => {
-            handleSkipQuestion();
-          }}
+          initialBonusTime={activeEffects.initialBonusTime || 0} 
+          hasChangeHelpline={!usedHelplines[gameState.currentTurn]?.includes('change_question')}
+          onSkipQuestion={() => handleSkipQuestion()}
         />
       )}
 
