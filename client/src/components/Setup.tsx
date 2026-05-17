@@ -1,62 +1,23 @@
-import React, { useState, useEffect } from 'react'; // 👈 أضفنا useEffect هنا
-import { CATEGORIES_CONFIG } from '../data/questions';
+
+import React, { useState } from 'react';
+import { CATEGORIES_CONFIG, QUESTIONS } from '../data/questions';
 import { motion } from 'framer-motion';
-import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles, Clock, Phone, Bomb, Shuffle, Ghost } from 'lucide-react';
+import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles } from 'lucide-react';
+import { HelpType, Question } from '../types';
 
 interface SetupProps {
   onStart: (team1: string, team2: string, selectedCats: string[], t1Helps: HelpType[], t2Helps: HelpType[]) => void;
   isAdmin: boolean;
   onOpenAdmin: () => void;
-  allQuestions: any[];
+  allQuestions: Question[];
 }
 
-// 1. تعريف الألوان والرموز القوية لوسائل المساعدة
-const HELP_STYLES = {
-  think: {
-    icon: Clock,
-    name: 'خل أفكر',
-    desc: 'تعطي الفريق 60 ثانية للإجابة',
-    color: 'bg-yellow-400 border-yellow-500 text-black', 
-    selected: 'ring-4 ring-yellow-200'
-  },
-  phone: {
-    icon: Phone,
-    name: 'أريد أخبار',
-    desc: 'إيقاف الوقت، ثم استئنافه بـ 40 ثانية',
-    color: 'bg-orange-500 border-orange-600 text-white', 
-    selected: 'ring-4 ring-orange-300'
-  },
-  destruction: {
-    icon: Bomb,
-    name: 'تفليش',
-    desc: 'إذا جاوبتم صح، الخصم ينقص نقاط السؤال',
-    color: 'bg-red-600 border-red-700 text-white', 
-    selected: 'ring-4 ring-red-300'
-  },
-  change: {
-    icon: Shuffle,
-    name: 'شوفلي غيرة',
-    desc: 'تبديل السؤال بنفس المستوى وتجديد الوقت',
-    color: 'bg-blue-500 border-blue-600 text-white', 
-    selected: 'ring-4 ring-blue-200'
-  },
-  thief: {
-    icon: Ghost,
-    name: 'حرامي',
-    desc: 'سرقة سؤال الخصم القادم',
-    color: 'bg-green-500 border-green-600 text-white', 
-    selected: 'ring-4 ring-green-200'
-  }
-} as const;
-
-type HelpType = keyof typeof HELP_STYLES;
-
-const HELPS_LIST: { type: HelpType }[] = [
-  { type: 'think' },
-  { type: 'phone' },
-  { type: 'destruction' },
-  { type: 'change' },
-  { type: 'thief' }
+const HELPS_CONFIG: { type: HelpType; name: string; desc: string }[] = [
+  { type: 'think', name: 'خل أفكر', desc: 'تعطي الفريق 60 ثانية للإجابة' },
+  { type: 'phone', name: 'أريد أخبار', desc: 'إيقاف الوقت، ثم استئنافه بـ 40 ثانية' },
+  { type: 'destruction', name: 'تفليش', desc: 'إذا جاوبتم صح، الخصم ينقص نقاط السؤال' },
+  { type: 'change', name: 'شوفلي غيرة', desc: 'تبديل السؤال بنفس المستوى وتجديد الوقت' },
+  { type: 'thief', name: 'حرامي', desc: 'سرقة سؤال الخصم القادم' },
 ];
 
 const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestions }) => {
@@ -66,33 +27,6 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
   const [team1Helps, setTeam1Helps] = useState<HelpType[]>([]);
   const [team2Helps, setTeam2Helps] = useState<HelpType[]>([]);
   const [showRules, setShowRules] = useState(false);
-
-  // 🔽 جلب الأصناف الحية والديناميكية من السيرفر وقاعدة البيانات 🔽
-  const [categories, setCategories] = useState<{ name: string; icon: string }[]>([]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch('/api/categories');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data.length > 0) {
-            setCategories(data.data); // تعيين الأصناف القادمة من MongoDB
-          } else {
-            setCategories(CATEGORIES_CONFIG); // استخدام المحلي احتياطاً
-          }
-        } else {
-          setCategories(CATEGORIES_CONFIG);
-        }
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-        setCategories(CATEGORIES_CONFIG); // في حال السيرفر مغلق محلياً
-      }
-    };
-
-    fetchCategories();
-  }, []);
-  // 🔼 قمنا بالربط بنجاح 🔼
 
   const toggleCategory = (cat: string) => {
     if (selectedCats.includes(cat)) {
@@ -155,7 +89,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           <ul className="space-y-3 font-bold text-lg opacity-90">
             <li className="flex gap-3"><span className="text-yellow-500">●</span> يتم تشكيل فريقين متنافسين.</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> كل فريق يختار 3 أصناف (المجموع 6 أصناف للعبة).</li>
-            <li className="flex gap-3"><span className="text-yellow-500">●</span> لكل صنف 3 مستويات صعوبة: سهل (100), متوسط (200), صعب (400).</li>
+            <li className="flex gap-3"><span className="text-yellow-500">●</span> لكل صنف 3 مستويات صعوبة: سهل (100)، متوسط (200)، صعب (400).</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> كل مستوى صعوبة يحتوي على سؤالين في القيم الواحد.</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> الفائز هو الفريق الذي يجمع أكبر عدد من النقاط.</li>
             <li className="flex gap-3"><span className="text-yellow-500">●</span> الأسئلة التي تتم الإجابة عليها لا تتكرر في المرات القادمة.</li>
@@ -182,28 +116,16 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
               <Sparkles size={16} /> اختر 3 وسائل مساعدة
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {HELPS_LIST.map(({ type }) => {
-                const style = HELP_STYLES[type];
-                const Icon = style.icon;
-                const isSelected = team1Helps.includes(type);
-                const isMaxed = team1Helps.length >= 3 && !isSelected;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => toggleHelp(1, type)}
-                    disabled={isMaxed}
-                    className={`flex items-center gap-3 p-4 h-20 rounded-2xl border-4 text-right transition-all font-black shadow-lg disabled:opacity-30 disabled:cursor-not-allowed ${isSelected ? `${style.color} ${style.selected}` : 'bg-white/70 border-black/10 text-black'}`}
-                  >
-                    <Icon size={24} className={isSelected ? '' : 'text-black/40'} />
-                    <div>
-                      <div className="text-base leading-tight">{style.name}</div>
-                      <div className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-black/50'}`}>{style.desc}</div>
-                    </div>
-                    {isSelected && <CheckCircle2 size={20} className="mr-auto" />}
-                  </button>
-                );
-              })}
+              {HELPS_CONFIG.map(help => (
+                <button
+                  key={help.type}
+                  onClick={() => toggleHelp(1, help.type)}
+                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team1Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
+                >
+                  <div className="text-sm">{help.name}</div>
+                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -226,28 +148,16 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
               <Sparkles size={16} /> اختر 3 وسائل مساعدة
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {HELPS_LIST.map(({ type }) => {
-                const style = HELP_STYLES[type];
-                const Icon = style.icon;
-                const isSelected = team2Helps.includes(type);
-                const isMaxed = team2Helps.length >= 3 && !isSelected;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => toggleHelp(2, type)}
-                    disabled={isMaxed}
-                    className={`flex items-center gap-3 p-4 h-20 rounded-2xl border-4 text-right transition-all font-black shadow-lg disabled:opacity-30 disabled:cursor-not-allowed ${isSelected ? `${style.color} ${style.selected}` : 'bg-white/70 border-black/10 text-black'}`}
-                  >
-                    <Icon size={24} className={isSelected ? '' : 'text-black/40'} />
-                    <div>
-                      <div className="text-base leading-tight">{style.name}</div>
-                      <div className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-black/50'}`}>{style.desc}</div>
-                    </div>
-                    {isSelected && <CheckCircle2 size={20} className="mr-auto" />}
-                  </button>
-                );
-              })}
+              {HELPS_CONFIG.map(help => (
+                <button
+                  key={help.type}
+                  onClick={() => toggleHelp(2, help.type)}
+                  className={`p-4 rounded-2xl border-4 text-right transition-all font-black ${team2Helps.includes(help.type) ? 'bg-black border-black text-[#F7C705]' : 'bg-white/50 border-black/5 text-black/60'}`}
+                >
+                  <div className="text-sm">{help.name}</div>
+                  <div className="text-[10px] opacity-40 font-bold">{help.desc}</div>
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -261,66 +171,16 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {/* 📁 تم تغيير دالة الماب هنا لتقرأ من الـ categories المستلمة ديناميكياً */}
-          {categories.map(cat => {
-            const isSelected = selectedCats.includes(cat.name);
-            const catQsCount = allQuestions ? allQuestions.filter(q => q.category === cat.name).length : 0;
-            const gamesCount = Math.floor(catQsCount / 6);
-
-            return (
-              <button
-                key={cat.name}
-                type="button"
-                onClick={() => toggleCategory(cat.name)}
-                disabled={!isSelected && selectedCats.length >= 6}
-                className={`
-                  relative h-48 rounded-[32px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-end pb-2
-                  ${isSelected 
-                    ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105 ring-4 ring-[#F7C705]/30' 
-                    : 'bg-white border-black/10 text-black hover:border-black/30 hover:scale-[1.02]'
-                  }
-                  disabled:opacity-30 disabled:cursor-not-allowed shadow-lg
-                `}
-              >
-                {/* خلفية الصورة */}
-                <div className="absolute inset-0 z-0 flex items-center justify-center">
-                  <img 
-                    src={cat.icon} 
-                    alt="" 
-                    className="w-full h-full object-cover opacity-100 transition-transform duration-300" 
-                  />
-                  {isSelected && <div className="absolute inset-0 bg-black/20" />}
-                </div>
-
-                {/* المحتوى السفلي */}
-                <div className="relative z-10 w-full flex justify-center mt-auto">
-                  <div className={`px-4 py-1.5 rounded-full text-[11px] font-black shadow-md border transform translate-y-1 ${
-                    isSelected 
-                      ? 'bg-[#F7C705] text-black border-[#F7C705]' 
-                      : 'bg-black text-white border-black'
-                  }`}>
-                    {gamesCount} ألعاب متاحة
-                  </div>
-                </div>
-                
-                {/* علامة الصح عند التحديد */}
-                {isSelected && (
-                  <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705] z-20 bg-black/50 rounded-full p-0.5 drop-shadow-lg" size={26} />
-                )}
-              </button>
-            );
-          })}
-        </div>
+       ئ
       </div>
 
       <div className="mt-16 flex justify-center">
         <button
           onClick={handleStart}
-          disabled={selectedCats.length !== 6 || team1Helps.length !== 3 || team2Helps.length !== 3} // تأكيد اختيار الوسائل قبل البدء
+          disabled={selectedCats.length !== 6}
           className={`
             px-20 py-6 rounded-3xl text-2xl font-black transition-all transform hover:scale-105 active:scale-95 shadow-2xl
-            ${(selectedCats.length === 6 && team1Helps.length === 3 && team2Helps.length === 3)
+            ${selectedCats.length === 6
               ? 'bg-black text-[#F7C705] hover:shadow-black/20'
               : 'bg-black/10 text-black/20 cursor-not-allowed'
             }

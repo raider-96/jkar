@@ -186,7 +186,7 @@ const App: React.FC = () => {
 
       <nav className="relative z-10 p-6 flex justify-between items-center max-w-7xl mx-auto mb-4 border-b-2 border-black/10">
         <div className="flex items-center gap-4">
-          <img src="img/lo.jpg" alt="Chgar" className="w-16 h-16 rounded-[20px] shadow-2xl border-4 border-black" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <img src="https://raw.githubusercontent.com/stackblitz/stackblitz-images/main/chgar-logo.png" alt="Chgar" className="w-16 h-16 rounded-[20px] shadow-2xl border-4 border-black" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <div className="flex flex-col">
             <span className="text-4xl font-black tracking-tighter uppercase leading-none">چگار</span>
             <span className="text-[10px] font-black tracking-[0.2em] opacity-40">CHGAR GAME</span>
@@ -209,37 +209,7 @@ const App: React.FC = () => {
 
       <main className="relative z-10">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
-     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-      {gameState.step === 'admin' && (
-          <AdminPanel
-            users={users}
-            questions={allQuestions} // 👈 تم تعديلها إلى allQuestions لتتوافق مع الـ State الخاص بكِ
-            onAddUser={handleAddUser}
-            onDeleteUser={handleDeleteUser}
-            onToggleUser={handleToggleUser}
-            onAddQuestion={handleAddQuestion}
-            onDeleteQuestion={handleDeleteQuestion}
-            onImportData={handleImportData}
-            onExportData={handleExportData}
-            onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} // 👈 تم تعديلها للعودة إلى صفحة الـ Setup بنجاح
-            
-            // دالة إضافة الصنف التي تربط لوحة التحكم بالسيرفر مباشرة
-            onAddCategory={async (name, icon) => {
-              try {
-                const response = await fetch('/api/categories', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, icon })
-                });
-                return response.ok; 
-              } catch (e) {
-                console.error(e);
-                return false;
-              }
-            }}
-          />
-        )}
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        {gameState.step === 'admin' && <AdminPanel users={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} onToggleUser={handleToggleUser} questions={allQuestions} onAddQuestion={handleAddQuestion} onDeleteQuestion={handleDeleteQuestion} onExportData={handleExportData} onImportData={handleImportData} onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} />}
         {gameState.step === 'setup' && <Setup onStart={handleStartGame} isAdmin={currentUser?.role === 'admin'} onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))} allQuestions={allQuestions} />}
         {gameState.step === 'game' && (
           <div className="space-y-8 animate-in fade-in duration-700">
