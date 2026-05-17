@@ -221,10 +221,9 @@ const App: React.FC = () => {
       showToast('❌ حدث خطأ اتصال، لم يتم حفظ السؤال.', 'error');
     }
   };
-
 const handleDeleteQuestion = async (id: string) => {
     try {
-      // إرسال طلب الحذف الفعلي إلى الباك إند
+      // 1️⃣ إرسال طلب الحذف الفعلي إلى الباك إند
       const response = await fetch(`/api/questions/${id}`, {
         method: 'DELETE',
       });
@@ -238,15 +237,9 @@ const handleDeleteQuestion = async (id: string) => {
           throw new Error('فشل الحذف من السيرفر');
         }
       }
-
-      // التحديث المحلي المتوافق 100% مع الـ State دون الحاجة لـ any خارجي
-      ((prevQuestions: any[]) => {
-        return prevQuestions.filter((q: any) => {
-          const targetId = q._id || q.id;
-          return targetId !== id;
-        });
-      });
-
+// 1️⃣ تحديث الـ State ديناميكياً بدون الاعتماد على الاسم الثابت لـ setQuestions
+      // تفريغ الأزمة وإعادة تحميل الصفحة تلقائياً لتعكس البيانات المحذوفة فوراً 🚀
+      window.location.reload();
       console.log("Deleted successfully");
 
     } catch (err) {
