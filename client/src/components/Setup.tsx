@@ -98,7 +98,6 @@ const Setup: React.FC<SetupProps> = ({ onSetupComplete, allQuestions, isAdmin, o
     }
   };
 
-  const isGameReady = selectedCats.length === 6 && team1Helps.length === 3 && team2Helps.length === 3;
 
   return (
     <motion.div 
