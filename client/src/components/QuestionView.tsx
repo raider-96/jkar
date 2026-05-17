@@ -10,7 +10,11 @@ interface QuestionViewProps {
 }
 
 const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTurn, onAnswer }) => {
+  // 🚀 اطبعي هذا السطر لكي نرى في كونسول المتصفح حقول السؤال القادمة من السيرفر
+  console.log("بيانات السؤال الحالي كاملة:", question);
+
   const [showAnswer, setShowAnswer] = useState(false);
+  // ... باقي الكود كما هو  const [showAnswer, setShowAnswer] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
   const [isSecondChance, setIsSecondChance] = useState(false);
   const [activeTeamIdx, setActiveTeamIdx] = useState(currentTurn);
