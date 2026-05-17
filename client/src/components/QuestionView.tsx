@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Question } from '../types';
-import { Timer, CheckCircle, XCircle, Eye, Image as ImageIcon, UserCircle } from 'lucide-react';
+import { Timer, CheckCircle, XCircle, Eye, Image as ImageIcon, UserCircle, HelpCircle } from 'lucide-react';
 
 interface QuestionViewProps {
   question: Question;
@@ -16,6 +15,9 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
   const [isSecondChance, setIsSecondChance] = useState(false);
   const [activeTeamIdx, setActiveTeamIdx] = useState(currentTurn);
 
+  // استخراج رابط الصورة بشكل آمن سواء كان مسمى image أو questionImage
+  const imageUrl = question.image || (question as any).questionImage;
+
   useEffect(() => {
     if (timeLeft > 0 && !showAnswer) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -28,16 +30,21 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
   }, [timeLeft, showAnswer, isSecondChance, currentTurn]);
 
   const getChallengeIcon = () => {
+    // إذا كان نوع السؤال 'image' أو كان السؤال يحتوي على رابط صورة فعلياً
+    if (question.type === 'image' || imageUrl) {
+      return <ImageIcon className="text-[#F7C705]" size={32} />;
+    }
     switch(question.type) {
-      case 'image': return <ImageIcon className="text-[#F7C705]" size={32} />;
       case 'act': return <UserCircle className="text-[#F7C705]" size={32} />;
-      default: return null;
+      default: return <HelpCircle className="text-[#F7C705]" size={32} />;
     }
   };
 
   const getChallengeLabel = () => {
+    if (question.type === 'image' || imageUrl) {
+      return 'تحدي تخمين الصورة';
+    }
     switch(question.type) {
-      case 'image': return 'تحدي تخمين الصورة';
       case 'act': return 'تحدي التمثيل';
       default: return 'سؤال عام';
     }
@@ -46,6 +53,7 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md rtl">
       <div className="bg-[#F7C705] border-8 border-black w-full max-w-4xl max-h-[90vh] rounded-[60px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] flex flex-col animate-in zoom-in-95 duration-300">
+        
         {/* Header - Stays Fixed */}
         <div className="px-8 py-6 flex justify-between items-center bg-black text-[#F7C705] shrink-0">
           <div>
@@ -69,9 +77,15 @@ const QuestionView: React.FC<QuestionViewProps> = ({ question, teams, currentTur
               {getChallengeIcon()}
               <span>{getChallengeLabel()} • {question.points} نقطة</span>
             </div>
-            {question.image && (
+
+            {/* عرض الصورة بشكل مرن واحترافي إذا كانت متوفرة */}
+            {imageUrl && (
               <div className="w-full max-w-lg h-64 overflow-hidden rounded-[40px] border-8 border-black shadow-2xl mt-4 shrink-0">
-                <img src={question.image} alt="Challenge" className="w-full h-full object-cover" />
+                <img 
+                  src={imageUrl} 
+                  alt="Challenge" 
+                  className="w-full h-full object-cover" 
+                />
               </div>
             )}
           </div>
