@@ -236,7 +236,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
           </span>
         </div>
 
-       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+ <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
   {CATEGORIES_CONFIG.map(cat => {
     const isSelected = selectedCats.includes(cat.name);
     const catQsCount = allQuestions ? allQuestions.filter(q => q.category === cat.name).length : 0;
@@ -249,35 +249,39 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
         onClick={() => toggleCategory(cat.name)}
         disabled={!isSelected && selectedCats.length >= 6}
         className={`
-          relative h-44 rounded-[40px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-center
+          relative h-48 rounded-[32px] border-4 transition-all duration-300 text-center font-black overflow-hidden flex flex-col items-center justify-end pb-2
           ${isSelected 
-            ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105' 
-            : 'bg-white border-black/10 text-black hover:border-black/30 hover:bg-white'
+            ? 'bg-black border-black text-[#F7C705] shadow-2xl scale-105 ring-4 ring-[#F7C705]/30' 
+            : 'bg-white border-black/10 text-black hover:border-black/30 hover:scale-[1.02]'
           }
           disabled:opacity-30 disabled:cursor-not-allowed shadow-lg
         `}
       >
-        {/* خلفية الصورة - ملوّنة وواضحة جداً بنسبة 60% */}
-        <div className="absolute inset-0 z-0">
+        {/* خلفية الصورة - واضحة تماماً وبدون أي فلاتر تعتيم */}
+        <div className="absolute inset-0 z-0 flex items-center justify-center">
           <img 
             src={cat.icon} 
             alt="" 
-            className="w-full h-full object-cover opacity-60" 
+            className="w-full h-full object-cover opacity-100 transition-transform duration-300" 
           />
-          {/* طبقة تصفية ذكية لإبراز الألوان والعداد السفلي فقط */}
-          <div className={`absolute inset-0 ${isSelected ? 'bg-black/70' : 'bg-white/40'}`} />
+          {/* تم إزالة الفلتر الشفاف المعتم بالكامل، ويظهر تأثير خفيف جداً فقط عند التحديد لحماية وضوح التصميم */}
+          {isSelected && <div className="absolute inset-0 bg-black/20" />}
         </div>
 
-        {/* تم حذف اسم الصنف هنا والإبقاء فقط على العداد الفني الجذاب بالأسفل لجمالية الواجهة */}
-        <div className="relative z-10 w-full h-full flex flex-col justify-end items-center p-5">
-          <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${isSelected ? 'bg-[#F7C705] text-black' : 'bg-black text-white'}`}>
+        {/* المحتوى السفلي: تم إنزال العداد لأسفل الإطار تماماً لترك مساحة كاملة للصورة لتظهر بوضوح */}
+        <div className="relative z-10 w-full flex justify-center mt-auto">
+          <div className={`px-4 py-1.5 rounded-full text-[11px] font-black shadow-md border transform translate-y-1 ${
+            isSelected 
+              ? 'bg-[#F7C705] text-black border-[#F7C705]' 
+              : 'bg-black text-white border-black'
+          }`}>
             {gamesCount} ألعاب متاحة
           </div>
         </div>
         
-        {/* علامة الاختيار الأنيقة */}
+        {/* علامة الصح عند اختيار الصنف مع تظليل خلفي لضمان بروزها فوق الصورة الواضحة */}
         {isSelected && (
-          <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705] z-20" size={24} />
+          <CheckCircle2 className="absolute top-4 left-4 text-[#F7C705] z-20 bg-black/50 rounded-full p-0.5 drop-shadow-lg" size={26} />
         )}
       </button>
     );
