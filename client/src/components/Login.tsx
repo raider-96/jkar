@@ -42,7 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             className="p-1 bg-[#F7C705] rounded-[40px] shadow-2xl border-4 border-[#F7C705]/20"
           >
             <img 
-              src="img/lo.jpg" 
+              src="img/sq.jpeg" 
               alt="Chgar Logo" 
               className="w-36 h-36 rounded-[35px] object-cover"
               onError={(e) => { e.currentTarget.src = "https://via.placeholder.com/150?text=CHGAR"; }}
