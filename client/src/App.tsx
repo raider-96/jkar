@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { GameState, Team, Question, Difficulty, UserAccount, HelpType } from './types';
-import { QUESTIONS } from './data/questions';
+import { GameState, Team, Question, Difficulty, UserAccount, HelpType, CategoryInfo } from './types';
+import { QUESTIONS, CATEGORIES_CONFIG } from './data/questions';
 import Login from './components/Login';
 import Setup from './components/Setup';
 import GameBoard from './components/GameBoard';
@@ -41,6 +41,15 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('chagar_users');
     return saved ? JSON.parse(saved) : DEFAULT_USERS;
   });
+
+  const [categories, setCategories] = useState<CategoryInfo[]>(() => {
+    const saved = localStorage.getItem('chagar_categories');
+    return saved ? JSON.parse(saved) : CATEGORIES_CONFIG;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('chagar_categories', JSON.stringify(categories));
+  }, [categories]);
 
   const [allQuestions, setAllQuestions] = useState<Question[]>(() => {
     const saved = localStorage.getItem('chagar_custom_questions');
@@ -86,8 +95,23 @@ const App: React.FC = () => {
     localStorage.setItem('chagar_custom_questions', JSON.stringify(updated.filter(item => item.id.startsWith('custom-'))));
   };
 
+  const handleAddCategory = (cat: CategoryInfo) => {
+    if (categories.find(c => c.name.toLowerCase() === cat.name.toLowerCase())) return alert('الصنف موجود مسبقاً');
+    setCategories([...categories, cat]);
+  };
+
+  const handleDeleteCategory = (name: string) => {
+    setCategories(categories.filter(c => c.name !== name));
+    // Optional: Also delete questions belonging to this category?
+    // setAllQuestions(allQuestions.filter(q => q.category !== name));
+  };
+
   const handleExportData = () => {
-    const data = { users: users.filter(u => u.role !== 'admin'), questions: allQuestions.filter(q => q.id.startsWith('custom-')) };
+    const data = { 
+      users: users.filter(u => u.role !== 'admin'), 
+      questions: allQuestions.filter(q => q.id.startsWith('custom-')),
+      categories: categories
+    };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -103,6 +127,10 @@ const App: React.FC = () => {
         const existing = users.map(u => u.username.toLowerCase());
         setUsers([...users, ...data.users.filter((u: any) => !existing.includes(u.username.toLowerCase()))]);
       }
+      if (data.categories) {
+        const existingNames = categories.map(c => c.name.toLowerCase());
+        setCategories([...categories, ...data.categories.filter((c: any) => !existingNames.includes(c.name.toLowerCase()))]);
+      }
       if (data.questions) {
         const existingIds = allQuestions.map(q => q.id);
         const newQs = data.questions.filter((q: any) => !existingIds.includes(q.id));
@@ -110,8 +138,8 @@ const App: React.FC = () => {
         setAllQuestions(updated);
         localStorage.setItem('chagar_custom_questions', JSON.stringify(updated.filter(q => q.id.startsWith('custom-'))));
       }
-      alert('تم الاستيراد!');
-    } catch (err) { alert('خطأ في الملف!'); }
+      alert('تم الاستيراد بنجاح!');
+    } catch (err) { alert('خطأ في استيراد الملف!'); }
   };
 
   const handleStartGame = (t1: string, t2: string, cats: string[], t1Helps: HelpType[], t2Helps: HelpType[]) => {
@@ -209,12 +237,42 @@ const App: React.FC = () => {
 
       <main className="relative z-10">
         {gameState.step === 'login' && <Login onLogin={handleLogin} />}
-        {gameState.step === 'admin' && <AdminPanel users={users} onAddUser={handleAddUser} onDeleteUser={handleDeleteUser} onToggleUser={handleToggleUser} questions={allQuestions} onAddQuestion={handleAddQuestion} onDeleteQuestion={handleDeleteQuestion} onExportData={handleExportData} onImportData={handleImportData} onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} />}
-        {gameState.step === 'setup' && <Setup onStart={handleStartGame} isAdmin={currentUser?.role === 'admin'} onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))} allQuestions={allQuestions} />}
+        {gameState.step === 'admin' && (
+          <AdminPanel 
+            users={users} 
+            onAddUser={handleAddUser} 
+            onDeleteUser={handleDeleteUser} 
+            onToggleUser={handleToggleUser} 
+            categories={categories}
+            onAddCategory={handleAddCategory}
+            onDeleteCategory={handleDeleteCategory}
+            questions={allQuestions} 
+            onAddQuestion={handleAddQuestion} 
+            onDeleteQuestion={handleDeleteQuestion} 
+            onExportData={handleExportData} 
+            onImportData={handleImportData} 
+            onBack={() => setGameState(prev => ({ ...prev, step: 'setup' }))} 
+          />
+        )}
+        {gameState.step === 'setup' && (
+          <Setup 
+            onStart={handleStartGame} 
+            isAdmin={currentUser?.role === 'admin'} 
+            onOpenAdmin={() => setGameState(prev => ({ ...prev, step: 'admin' }))} 
+            allQuestions={allQuestions} 
+            categories={categories}
+          />
+        )}
         {gameState.step === 'game' && (
           <div className="space-y-8 animate-in fade-in duration-700">
             <ScoreBoard teams={gameState.teams} currentTurn={gameState.currentTurn} onAdjustScore={(idx, amt) => { const nt = [...gameState.teams] as [Team, Team]; nt[idx].score += amt; setGameState(prev => ({ ...prev, teams: nt })); }} />
-            <GameBoard gameState={gameState} onSelectQuestion={handleSelectQuestion} permanentlyUsedIds={permanentlyUsedIds} questions={allQuestions} />
+            <GameBoard 
+              gameState={gameState} 
+              onSelectQuestion={handleSelectQuestion} 
+              permanentlyUsedIds={permanentlyUsedIds} 
+              questions={allQuestions} 
+              categories={categories}
+            />
           </div>
         )}
         {gameState.step === 'result' && (

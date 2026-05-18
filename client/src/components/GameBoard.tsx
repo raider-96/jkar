@@ -1,15 +1,14 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { GameState, Difficulty, Question } from '../types';
+import { GameState, Difficulty, Question, CategoryInfo } from '../types';
 import { CheckCircle } from 'lucide-react';
-import { CATEGORIES_CONFIG } from '../data/questions';
-
 interface GameBoardProps {
   gameState: GameState;
   onSelectQuestion: (category: string, difficulty: Difficulty) => void;
   permanentlyUsedIds: string[];
   questions: Question[];
+  categories: CategoryInfo[];
 }
 
 const DIFFICULTIES: { label: string; value: Difficulty; points: number }[] = [
@@ -18,12 +17,12 @@ const DIFFICULTIES: { label: string; value: Difficulty; points: number }[] = [
   { label: 'صعب', value: 'hard', points: 400 },
 ];
 
-const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, permanentlyUsedIds, questions }) => {
+const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, permanentlyUsedIds, questions, categories }) => {
   return (
     <div className="w-full max-w-7xl mx-auto p-4 rtl">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
         {gameState.selectedCategories.map((catName) => {
-          const catInfo = CATEGORIES_CONFIG.find(c => c.name === catName);
+          const catInfo = categories.find(c => c.name === catName);
           const remainingCount = questions.filter(q => q.category === catName && !permanentlyUsedIds.includes(q.id)).length;
 
           return (
