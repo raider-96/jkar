@@ -33,7 +33,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
-  const [newCat, setNewCat] = useState<CategoryInfo>({ name: '', icon: '🎮' });
+  const [newCat, setNewCat] = useState<CategoryInfo>({ name: '', image: '' });
   const [selectedCatView, setSelectedCatView] = useState<string | null>(null);
 
   const [newQ, setNewQ] = useState<Partial<Question>>({
@@ -41,6 +41,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     difficulty: 'easy',
     points: 100
   });
+
+  const handleCategoryImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (re) => {
+        const base64 = re.target?.result as string;
+        setNewCat({...newCat, image: base64});
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleImageUpload = (type: 'q' | 'a', e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -95,12 +107,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="lg:col-span-1">
              <div className="bg-black text-[#F7C705] rounded-[40px] p-8 shadow-2xl">
                 <h2 className="text-2xl font-black mb-8 flex items-center gap-3"><FolderPlus /> إضافة صنف جديد</h2>
-                <form onSubmit={(e) => { e.preventDefault(); if(newCat.name) { onAddCategory(newCat); setNewCat({name: '', icon: '🎮'}); } }} className="space-y-4">
-                   <div className="grid grid-cols-4 gap-2">
-                     <input type="text" value={newCat.icon} onChange={(e) => setNewCat({...newCat, icon: e.target.value})} className="col-span-1 bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-2 py-4 text-center text-2xl font-black outline-none focus:border-[#F7C705]" placeholder="Emoji" />
-                     <input type="text" value={newCat.name} onChange={(e) => setNewCat({...newCat, name: e.target.value})} className="col-span-3 bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]" placeholder="اسم الصنف" required />
-                   </div>
-                   <button type="submit" className="w-full bg-[#F7C705] text-black py-4 rounded-2xl font-black text-xl">إنشاء الصنف</button>
+                <form onSubmit={(e) => { e.preventDefault(); if(newCat.name && newCat.image) { onAddCategory(newCat); setNewCat({name: '', image: ''}); } else if(!newCat.image) { alert('يرجى رفع صورة للصنف'); } }} className="space-y-4">
+                   <input type="text" value={newCat.name} onChange={(e) => setNewCat({...newCat, name: e.target.value})} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-6 py-4 text-[#F7C705] font-black outline-none focus:border-[#F7C705]" placeholder="اسم الصنف" required />
+                   
+                   <label className="w-full bg-[#1A1A1A] border-2 border-dashed border-[#F7C705]/20 rounded-2xl py-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#F7C705] transition-all">
+                      {newCat.image ? (
+                        <img src={newCat.image} className="w-20 h-20 rounded-xl object-cover border-2 border-[#F7C705]" alt="Preview" />
+                      ) : (
+                        <>
+                          <ImageIcon size={32} />
+                          <span className="text-[10px] font-black opacity-40 uppercase">رفع صورة الصنف</span>
+                        </>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageUpload} />
+                   </label>
+
+                   <button type="submit" className="w-full bg-[#F7C705] text-black py-4 rounded-2xl font-black text-xl shadow-xl">إنشاء الصنف</button>
                 </form>
              </div>
           </div>
@@ -109,9 +131,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 <h2 className="text-2xl font-black text-black mb-8">قائمة الأصناف ({categories.length})</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    {categories.map(cat => (
-                     <div key={cat.name} className="bg-white p-6 rounded-[30px] border-4 border-black/5 flex items-center justify-between shadow-sm">
+                     <div key={cat.name} className="bg-white p-4 rounded-[30px] border-4 border-black/5 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-4">
-                           <span className="text-3xl">{cat.icon}</span>
+                           <img src={cat.image} className="w-16 h-16 rounded-[20px] object-cover border-2 border-black/5" alt={cat.name} />
                            <p className="font-black text-xl">{cat.name}</p>
                         </div>
                         <button onClick={() => { if(confirm('هل تريد حذف الصنف؟')) onDeleteCategory(cat.name); }} className="p-3 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all"><Trash2 size={20} /></button>
@@ -173,13 +195,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                      <button 
                       key={cat.name} 
                       onClick={() => setSelectedCatView(cat.name)}
-                      className="bg-white p-8 rounded-[40px] border-4 border-black/5 text-right flex items-center justify-between group hover:border-black transition-all shadow-sm"
+                      className="bg-white p-6 rounded-[40px] border-4 border-black/5 text-right flex items-center justify-between group hover:border-black transition-all shadow-sm"
                      >
                         <div className="flex items-center gap-5">
-                           <span className="text-4xl">{cat.icon}</span>
+                           <img src={cat.image} className="w-16 h-16 rounded-[20px] object-cover" alt={cat.name} />
                            <div>
-                              <p className="font-black text-xl">{cat.name}</p>
-                              <p className="text-xs text-black/40 font-bold uppercase tracking-widest">{count} تحدي متوفر</p>
+                              <p className="font-black text-lg">{cat.name}</p>
+                              <p className="text-[10px] text-black/40 font-black uppercase tracking-tighter">{count} تحدي</p>
                            </div>
                         </div>
                         <ChevronRight className="text-black/20 group-hover:text-black transition-colors" />

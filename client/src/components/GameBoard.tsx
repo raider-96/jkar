@@ -27,9 +27,9 @@ const GameBoard: React.FC<GameBoardProps> = ({ gameState, onSelectQuestion, perm
 
           return (
             <div key={catName} className="flex flex-col gap-5">
-              <div className="bg-black p-5 rounded-[32px] border-4 border-black text-center shadow-2xl flex flex-col items-center gap-2 relative overflow-hidden group">
-                <span className="text-3xl z-10 transform group-hover:scale-125 transition-transform duration-300">{catInfo?.icon}</span>
-                <h3 className="text-[10px] font-black text-[#F7C705] truncate w-full z-10 uppercase tracking-tighter leading-tight">{catName}</h3>
+              <div className="bg-black p-5 rounded-[32px] border-4 border-black text-center shadow-2xl flex flex-col items-center gap-2 relative overflow-hidden group min-h-[140px] justify-center">
+                {catInfo?.image && <img src={catInfo.image} className="w-16 h-16 rounded-2xl object-cover z-10 transform group-hover:scale-110 transition-transform duration-300 border-2 border-[#F7C705]/20" alt={catName} />}
+                <h3 className="text-[10px] font-black text-[#F7C705] truncate w-full z-10 uppercase tracking-tighter leading-tight mt-1">{catName}</h3>
                 <div className="bg-[#F7C705] text-black text-[8px] font-black px-2 py-0.5 rounded-full z-10">
                   {remainingCount} متبقي
                 </div>

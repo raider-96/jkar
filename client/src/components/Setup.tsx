@@ -261,7 +261,7 @@ const Setup: React.FC<SetupProps> = ({ onStart, isAdmin, onOpenAdmin, allQuestio
                 {/* خلفية الصورة */}
                 <div className="absolute inset-0 z-0 flex items-center justify-center">
                   <img 
-                    src={cat.icon} 
+                    src={cat.image} 
                     alt="" 
                     className="w-full h-full object-cover opacity-100 transition-transform duration-300" 
                   />

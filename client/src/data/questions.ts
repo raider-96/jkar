@@ -1,32 +1,33 @@
 
+import { image } from 'framer-motion/client';
 import { Question } from '../types';
 
 export const CATEGORIES_CONFIG = [
-  { name: 'مسلسلات عربية', icon: '/img/categories/msar.jpg' },
-  { name: 'مسلسلات خليجية', icon: '/img/categories/msk.jpg' },
-  { name: 'مسلسلات أجنبية', icon: '/img/categories/msag.jpg' },
-  { name: 'مسلسلات أنمي', icon: '/img/categories/msan.jpg' },
-  { name: 'باب الحارة', icon: '/img/categories/bab.jpg' },
-  { name: 'جيم أوف ثرونز', icon: '/img/categories/got.jpg' },
-  { name: 'أفلام عربية', icon: '/img/categories/afar.jpg' },
-  { name: 'أفلام أجنبي', icon: '/img/categories/afag.jpg' },  
-  { name: 'مشاهير عرب', icon: '/img/categories/mshar.jpg' },
-  { name: 'مشاهير أجانب', icon: '/img/categories/mshag.jpg' },
-  { name: 'ماركات', icon: '/img/categories/mar.jpg' },
-  { name: 'تحديات دين', icon: '/img/categories/den.jpg' },
-  { name: 'تحديات حسينية', icon: '/img/categories/hs.jpg' },
-  { name: 'سيارات', icon: '/img/categories/car.jpg' },
-  { name: 'ألعاب الفيديو', icon: '/img/categories/gam.jpg' },
-  { name: 'العراق', icon: '/img/categories/iq.jpg' },
-  { name: 'كرة قدم  ', icon: '/img/categories/kra.jpg' },
-  { name: 'دوري اسباني', icon: '/img/categories/kraas.jpg' },
-  { name: 'دوري انكليزي', icon: '/img/categories/kraan.jpg' },
-  { name: 'تاريخ', icon: '/img/categories/tar.jpg' },
-  { name: 'جغرافية', icon: '/img/categories/ghr.jpg' },
-  { name: 'عواصم ودول', icon: '/img/categories/dol.jpg' },
-  { name: 'رياضيات وألغاز منطق', icon: '/img/categories/math.jpg' },
-  { name: 'لغة عربية', icon: '/img/categories/ar.jpg' },
-  { name: 'علوم', icon: '/img/categories/3lm.jpg' }
+  { name: 'مسلسلات عربية', image: '/img/categories/msar.jpg' },
+  { name: 'مسلسلات خليجية', image: '/img/categories/msk.jpg' },
+  { name: 'مسلسلات أجنبية', image: '/img/categories/msag.jpg' },
+  { name: 'مسلسلات أنمي', image: '/img/categories/msan.jpg' },
+  { name: 'باب الحارة', image: '/img/categories/bab.jpg' },
+  { name: 'جيم أوف ثرونز', image: '/img/categories/got.jpg' },
+  { name: 'أفلام عربية', image: '/img/categories/afar.jpg' },
+  { name: 'أفلام أجنبي', image: '/img/categories/afag.jpg' },  
+  { name: 'مشاهير عرب', image: '/img/categories/mshar.jpg' },
+  { name: 'مشاهير أجانب', image: '/img/categories/mshag.jpg' },
+  { name: 'ماركات', image: '/img/categories/mar.jpg' },
+  { name: 'تحديات دين', image: '/img/categories/den.jpg' },
+  { name: 'تحديات حسينية', image: '/img/categories/hs.jpg' },
+  { name: 'سيارات', image: '/img/categories/car.jpg' },
+  { name: 'ألعاب الفيديو', image: '/img/categories/gam.jpg' },
+  { name: 'العراق', image: '/img/categories/iq.jpg' },
+  { name: 'كرة قدم  ', image: '/img/categories/kra.jpg' },
+  { name: 'دوري اسباني', image: '/img/categories/kraas.jpg' },
+  { name: 'دوري انكليزي', image: '/img/categories/kraan.jpg' },
+  { name: 'تاريخ', image: '/img/categories/tar.jpg' },
+  { name: 'جغرافية', image: '/img/categories/ghr.jpg' },
+  { name: 'عواصم ودول', image: '/img/categories/dol.jpg' },
+  { name: 'رياضيات وألغاز منطق', image: '/img/categories/math.jpg' },
+  { name: 'لغة عربية', image: '/img/categories/ar.jpg' },
+  { name: 'علوم', image: '/img/categories/3lm.jpg' }
 ]
 .slice(0, 24); // Ensuring exactly 24 based on instruction, can be more later.
 

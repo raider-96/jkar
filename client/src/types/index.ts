@@ -24,8 +24,10 @@ export type HelpType = 'think' | 'phone' | 'destruction' | 'change' | 'thief';
 
 export interface CategoryInfo {
   name: string;
-  icon: string;
+  image: string;
 }
+
+
 
 export interface Team {
   name: string;
