@@ -1,4 +1,3 @@
-import { image } from 'framer-motion/client';
 import { Question } from '../types';
 
 export const CATEGORIES_CONFIG = [

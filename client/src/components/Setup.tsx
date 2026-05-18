@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { QUESTIONS } from '../data/questions';
 import { motion } from 'framer-motion';
 import { Users, CheckCircle2, Trophy, HelpCircle, ShieldAlert, Sparkles, Clock, Phone, Bomb, Shuffle, Ghost } from 'lucide-react';
 import {  Question, CategoryInfo } from '../types';

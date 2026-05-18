@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Question, HelpType, Team } from '../types';
-import { Timer, CheckCircle, XCircle, Eye, Image as ImageIcon, Play, Pause, RefreshCw, Smartphone, Brain, Bomb, UserPlus, Ghost } from 'lucide-react';
+import { Timer, CheckCircle, XCircle, Eye, Image as Play, Pause, RefreshCw, Smartphone, Brain, Bomb, Ghost } from 'lucide-react';
 
 interface QuestionViewProps {
   question: Question;

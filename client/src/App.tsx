@@ -172,7 +172,6 @@ const App: React.FC = () => {
   };
 
   const handleSelectQuestion = (category: string, difficulty: Difficulty) => {
-    const targetIdx = gameState.activeThief !== null ? gameState.activeThief : gameState.currentTurn;
     const avail = allQuestions.filter(q => q.category === category && q.difficulty === difficulty && !permanentlyUsedIds.includes(q.id));
     const chosen = avail.length > 0 ? avail[Math.floor(Math.random() * avail.length)] : allQuestions.filter(q => q.category === category && q.difficulty === difficulty)[0];
     const prefix = `${category}-${difficulty}`;
