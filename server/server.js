@@ -224,8 +224,9 @@ app.delete('/api/categories/:name', async (req, res) => {
 
 // ================= 6. تشغيل وتصدير السيرفر =================
 const PORT = process.env.PORT || 5000;
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => console.log(`🚀 السيرفر يعمل الآن على الرابط: http://localhost:${PORT}`));
-}
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
 
 module.exports = app;

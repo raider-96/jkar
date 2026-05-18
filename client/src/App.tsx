@@ -12,7 +12,7 @@ import confetti from 'canvas-confetti';
 import { RotateCcw, LogOut, Award, ArrowLeft } from 'lucide-react';
 
 // تحديد رابط السيرفر الخاص بك (تأكد من مطابقة المنفذ/البورت لـ سيرفرك)
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://jkar-j.up.railway.app/api';
 
 const DEFAULT_USERS: UserAccount[] = [
   { username: 'admin', password: '123', role: 'admin', isActive: true, createdAt: new Date().toISOString() },
