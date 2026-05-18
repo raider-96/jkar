@@ -29,12 +29,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   questions, onAddQuestion, onDeleteQuestion, 
   onExportData, onBack 
 }) => {
-  const [tab, setTab] = useState<'users' | 'challenges' | 'categories'>('challenges');
+  const [tab, setTab] = useState<'users' | 'challenges' | 'categories' | 'cloud'>('challenges');
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   
+  const [sUrl, setSUrl] = useState(localStorage.getItem('supabase_url') || '');
+  const [sKey, setSKey] = useState(localStorage.getItem('supabase_anon_key') || '');
   const [newCat, setNewCat] = useState<CategoryInfo>({ name: '', image: '' });
   const [selectedCatView, setSelectedCatView] = useState<string | null>(null);
+  const saveCloudSettings = () => {
+    localStorage.setItem('supabase_url', sUrl);
+    localStorage.setItem('supabase_anon_key', sKey);
+    alert('تم حفظ الإعدادات، يرجى إعادة تحميل الصفحة');
+    window.location.reload();
+  };
 
   const [newQ, setNewQ] = useState<Partial<Question>>({
     category: categories[0]?.name || '',
@@ -90,10 +98,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
            <h1 className="text-4xl font-black text-black tracking-tighter">لوحة الإدارة</h1>
         </div>
         
-        <div className="flex gap-2 bg-black/5 p-2 rounded-3xl overflow-x-auto max-w-full">
+           <div className="flex gap-2 bg-black/5 p-2 rounded-3xl overflow-x-auto max-w-full">
           <button onClick={() => { setTab('challenges'); setSelectedCatView(null); }} className={`px-6 py-3 rounded-2xl font-black transition-all shrink-0 ${tab === 'challenges' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>التحديات</button>
           <button onClick={() => setTab('categories')} className={`px-6 py-3 rounded-2xl font-black transition-all shrink-0 ${tab === 'categories' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>الأصناف</button>
           <button onClick={() => setTab('users')} className={`px-6 py-3 rounded-2xl font-black transition-all shrink-0 ${tab === 'users' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>المستخدمين</button>
+          <button onClick={() => setTab('cloud')} className={`px-6 py-3 rounded-2xl font-black transition-all shrink-0 ${tab === 'cloud' ? 'bg-black text-[#F7C705] shadow-lg' : 'text-black/40'}`}>السحابة 🌍</button>
         </div>
 
         <div className="flex gap-3">
@@ -249,7 +258,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {tab === 'users' && (
+        {tab === 'users' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-1 space-y-8">
              <div className="bg-black text-[#F7C705] rounded-[40px] p-8 shadow-2xl border-4 border-black/5">
@@ -283,6 +292,30 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                </div>
             </div>
           </div>
+        </div>
+      )}
+      {tab === 'cloud' && (
+        <div className="max-w-2xl mx-auto animate-in fade-in zoom-in-95">
+           <div className="bg-black text-[#F7C705] rounded-[50px] p-10 shadow-2xl border-4 border-black/5">
+              <h2 className="text-3xl font-black mb-10 flex items-center gap-4">⚙️ إعدادات المزامنة السحابية</h2>
+              <p className="text-sm font-bold opacity-60 mb-10 leading-relaxed text-right">
+                لجعل التعديلات تظهر لجميع اللاعبين على جميع الأجهزة، يجب ربط الموقع بقاعدة بيانات Supabase. 
+                <br />1. أنشئ حساب مجاني في <a href="https://supabase.com" target="_blank" className="underline">Supabase</a>.
+                <br />2. أنشئ مشروع جديد.
+                <br />3. انسخ الـ Project URL و Anon Key وضعهما هنا.
+              </p>
+              <div className="space-y-6 text-right">
+                 <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest mr-4 opacity-40">Project URL</label>
+                    <input type="text" value={sUrl} onChange={(e) => setSUrl(e.target.value)} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-6 py-4 text-[#F7C705] font-mono text-xs outline-none focus:border-[#F7C705]" placeholder="https://xyz.supabase.co" />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest mr-4 opacity-40">Anon Key</label>
+                    <input type="password" value={sKey} onChange={(e) => setSKey(e.target.value)} className="w-full bg-[#1A1A1A] border-2 border-[#F7C705]/10 rounded-2xl px-6 py-4 text-[#F7C705] font-mono text-xs outline-none focus:border-[#F7C705]" placeholder="eyJhbGciOiJIUzI1..." />
+                 </div>
+                 <button onClick={saveCloudSettings} className="w-full bg-[#F7C705] text-black py-5 rounded-2xl font-black text-xl mt-6 shadow-xl hover:scale-[1.02] transition-all">حفظ وتفعيل المزامنة</button>
+              </div>
+           </div>
         </div>
       )}
     </div>
